@@ -20,15 +20,25 @@
 <div class="mt-12">
     <form action="{{ route('install.saveAdmin') }}" method="POST" class="space-y-6">
         @csrf
-        
+
         <!-- Site Name -->
         <div class="space-y-2 text-start">
             <label for="site_name" class="block text-xs font-black uppercase text-slate-500 tracking-[0.2em] px-2">
                 Nombre del Sitio
             </label>
             <input type="text" name="site_name" id="site_name" value="{{ old('site_name', config('app.name')) }}"
-                   class="py-4 px-6 block w-full bg-slate-50/50 dark:bg-slate-950/50 border-slate-200 dark:border-slate-800 rounded-2xl text-sm text-slate-900 dark:text-white focus:border-blue-500 focus:ring-blue-500/10 transition-all font-medium placeholder-slate-400" 
+                   class="py-4 px-6 block w-full bg-slate-50/50 dark:bg-slate-950/50 border-slate-200 dark:border-slate-800 rounded-2xl text-sm text-slate-900 dark:text-white focus:border-blue-500 focus:ring-blue-500/10 transition-all font-medium placeholder-slate-400"
                    placeholder="Mi Aplicación">
+        </div>
+
+        <!-- App URL -->
+        <div class="space-y-2 text-start">
+            <label for="app_url" class="block text-xs font-black uppercase text-slate-500 tracking-[0.2em] px-2">
+                URL de la Aplicación
+            </label>
+            <input type="url" name="app_url" id="app_url" value="{{ old('app_url', config('app.url')) }}"
+                   class="py-4 px-6 block w-full bg-slate-50/50 dark:bg-slate-950/50 border-slate-200 dark:border-slate-800 rounded-2xl text-sm text-slate-900 dark:text-white focus:border-blue-500 focus:ring-blue-500/10 transition-all font-medium placeholder-slate-400"
+                   placeholder="http://localhost">
         </div>
 
         <div class="grid grid-cols-1 sm:grid-cols-2 gap-6 text-start">
@@ -38,7 +48,7 @@
                     Nombre del Administrador
                 </label>
                 <input type="text" name="admin_name" id="admin_name" value="{{ old('admin_name') }}"
-                       class="py-4 px-6 block w-full bg-slate-50/50 dark:bg-slate-950/50 border-slate-200 dark:border-slate-800 rounded-2xl text-sm text-slate-900 dark:text-white focus:border-blue-500 focus:ring-blue-500/10 transition-all font-medium placeholder-slate-400" 
+                       class="py-4 px-6 block w-full bg-slate-50/50 dark:bg-slate-950/50 border-slate-200 dark:border-slate-800 rounded-2xl text-sm text-slate-900 dark:text-white focus:border-blue-500 focus:ring-blue-500/10 transition-all font-medium placeholder-slate-400"
                        placeholder="Nombre Completo">
             </div>
 
@@ -48,7 +58,7 @@
                     Correo Electrónico
                 </label>
                 <input type="email" name="admin_email" id="admin_email" value="{{ old('admin_email') }}"
-                       class="py-4 px-6 block w-full bg-slate-50/50 dark:bg-slate-950/50 border-slate-200 dark:border-slate-800 rounded-2xl text-sm text-slate-900 dark:text-white focus:border-blue-500 focus:ring-blue-500/10 transition-all font-medium placeholder-slate-400" 
+                       class="py-4 px-6 block w-full bg-slate-50/50 dark:bg-slate-950/50 border-slate-200 dark:border-slate-800 rounded-2xl text-sm text-slate-900 dark:text-white focus:border-blue-500 focus:ring-blue-500/10 transition-all font-medium placeholder-slate-400"
                        placeholder="admin@ejemplo.com">
             </div>
         </div>
@@ -60,7 +70,7 @@
                     Contraseña
                 </label>
                 <input type="password" name="admin_password" id="admin_password"
-                       class="py-4 px-6 block w-full bg-slate-50/50 dark:bg-slate-950/50 border-slate-200 dark:border-slate-800 rounded-2xl text-sm text-slate-900 dark:text-white focus:border-blue-500 focus:ring-blue-500/10 transition-all font-medium placeholder-slate-400" 
+                       class="py-4 px-6 block w-full bg-slate-50/50 dark:bg-slate-950/50 border-slate-200 dark:border-slate-800 rounded-2xl text-sm text-slate-900 dark:text-white focus:border-blue-500 focus:ring-blue-500/10 transition-all font-medium placeholder-slate-400"
                        placeholder="••••••••">
             </div>
 
@@ -70,7 +80,7 @@
                     Confirmar Contraseña
                 </label>
                 <input type="password" name="admin_password_confirmation" id="admin_password_confirmation"
-                       class="py-4 px-6 block w-full bg-slate-50/50 dark:bg-slate-950/50 border-slate-200 dark:border-slate-800 rounded-2xl text-sm text-slate-900 dark:text-white focus:border-blue-500 focus:ring-blue-500/10 transition-all font-medium placeholder-slate-400" 
+                       class="py-4 px-6 block w-full bg-slate-50/50 dark:bg-slate-950/50 border-slate-200 dark:border-slate-800 rounded-2xl text-sm text-slate-900 dark:text-white focus:border-blue-500 focus:ring-blue-500/10 transition-all font-medium placeholder-slate-400"
                        placeholder="••••••••">
             </div>
         </div>
