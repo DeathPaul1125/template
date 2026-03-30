@@ -58,4 +58,18 @@ Route::middleware([
     Route::post('/crud-generator/generate', [\App\Http\Controllers\CrudGeneratorController::class, 'generate'])
         ->name('crud-generator.generate')
         ->middleware('role:super-admin');
+    Route::get('/crud-generator/{model}/edit', [\App\Http\Controllers\CrudGeneratorController::class, 'edit'])
+        ->name('crud-generator.edit')
+        ->middleware('role:super-admin');
+    Route::post('/crud-generator/{model}/rebuild', [\App\Http\Controllers\CrudGeneratorController::class, 'rebuild'])
+        ->name('crud-generator.rebuild')
+        ->middleware('role:super-admin');
+    Route::delete('/crud-generator/{model}/meta', [\App\Http\Controllers\CrudGeneratorController::class, 'destroyMeta'])
+        ->name('crud-generator.destroy-meta')
+        ->middleware('role:super-admin');
+    Route::get('/crud-generator/icons', [\App\Http\Controllers\CrudGeneratorController::class, 'icons'])
+        ->name('crud-generator.icons')
+        ->middleware('role:super-admin');
+
+    // @crud-routes
 });

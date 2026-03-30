@@ -4,13 +4,17 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 use Illuminate\Support\Str;
+use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\File;
 
 class CrudGeneratorController extends Controller
 {
+    private const META_DIR = 'crud-generator';
+
     public function index()
     {
-        return view('crud-generator.index');
+        $saved = $this->loadAllMeta();
+        return view('crud-generator.index', compact('saved'));
     }
 
     public function generate(Request $request)
@@ -20,6 +24,8 @@ class CrudGeneratorController extends Controller
             'fields'          => ['required', 'array', 'min:1'],
             'fields.*.name'   => ['required', 'regex:/^[a-z][a-z0-9_]*$/'],
             'fields.*.type'   => ['required', 'in:string,text,integer,bigInteger,boolean,date,datetime,decimal,float,enum'],
+            'menu_label'      => ['nullable', 'string', 'max:40'],
+            'menu_icon'       => ['nullable', 'string', 'max:600'],
         ]);
 
         $model         = $request->model_name;
@@ -78,11 +84,105 @@ class CrudGeneratorController extends Controller
             $genErrors[] = "Views: {$e->getMessage()}";
         }
 
+        // 5. Inject routes automatically
+        $addRoutes = $request->boolean('add_routes');
+        if ($addRoutes) {
+            try {
+                $this->injectRoutes($model, $useDatatables);
+                $generated[] = ['file' => 'routes/web.php', 'type' => 'route'];
+            } catch (\Throwable $e) {
+                $genErrors[] = "Routes: {$e->getMessage()}";
+                $addRoutes = false;
+            }
+        }
+
+        // 6. Inject menu item automatically
+        $addToMenu = $request->boolean('add_to_menu');
+        $menuLabel = trim((string) $request->menu_label) ?: Str::title(str_replace('_', ' ', Str::snake(Str::plural($model))));
+        $menuIcon  = $request->menu_icon ?: 'M4 6h16M4 10h16M4 14h16M4 18h16';
+        if ($addToMenu) {
+            try {
+                $this->injectMenuItem($model, $menuLabel, $menuIcon);
+                $generated[] = ['file' => 'resources/views/layouts/app.blade.php', 'type' => 'menu'];
+            } catch (\Throwable $e) {
+                $genErrors[] = "Menu: {$e->getMessage()}";
+            }
+        }
+
+        // 7. Save metadata for future edits / rebuild
+        $this->saveMeta($model, [
+            'model'         => $model,
+            'table_name'    => $tableName,
+            'fields'        => $fields,
+            'timestamps'    => $timestamps,
+            'soft_deletes'  => $softDeletes,
+            'use_datatables'=> $useDatatables,
+            'add_routes'    => $addRoutes,
+            'add_to_menu'   => $addToMenu,
+            'menu_label'    => $menuLabel,
+            'menu_icon'     => $menuIcon,
+            'generated_at'  => now()->toDateTimeString(),
+        ]);
+
         return back()
             ->with('generated', $generated)
-            ->with('route_snippet', $this->makeRouteSnippet($model, $useDatatables))
+            ->with('route_snippet', $addRoutes ? null : $this->makeRouteSnippet($model, $useDatatables))
             ->with('gen_errors', $genErrors)
             ->with('gen_model', $model);
+    }
+
+    public function icons()
+    {
+        return view('crud-generator.icons');
+    }
+
+    public function edit(string $model)
+    {
+        $meta = $this->loadMeta($model);
+        abort_unless($meta, 404);
+        $saved = $this->loadAllMeta();
+        return view('crud-generator.index', compact('saved', 'meta'));
+    }
+
+    public function rebuild(string $model)
+    {
+        $meta = $this->loadMeta($model);
+        abort_unless($meta, 404);
+
+        $output  = [];
+        $errors  = [];
+
+        // Clear all caches
+        try {
+            Artisan::call('optimize:clear');
+            $output[] = 'Cache limpiado correctamente.';
+        } catch (\Throwable $e) {
+            $errors[] = 'Cache: ' . $e->getMessage();
+        }
+
+        // Run pending migrations
+        try {
+            Artisan::call('migrate', ['--force' => true]);
+            $migOutput = Artisan::output();
+            $output[] = 'Migración ejecutada: ' . (trim($migOutput) ?: 'Sin cambios pendientes.');
+        } catch (\Throwable $e) {
+            $errors[] = 'Migrate: ' . $e->getMessage();
+        }
+
+        return back()
+            ->with('rebuild_model', $model)
+            ->with('rebuild_output', $output)
+            ->with('rebuild_errors', $errors);
+    }
+
+    public function destroyMeta(string $model)
+    {
+        $path = storage_path('app/' . self::META_DIR . '/' . $model . '.json');
+        if (File::exists($path)) {
+            File::delete($path);
+        }
+        return redirect()->route('crud-generator.index')
+            ->with('info', "Registro de {$model} eliminado.");
     }
 
     // ─── Generators ──────────────────────────────────────────────────────────
@@ -484,5 +584,117 @@ class CrudGeneratorController extends Controller
         $out .= "Route::resource('{$routePrefix}', {$controller}::class)->except(['show']);\n";
 
         return $out;
+    }
+
+    private function injectRoutes(string $model, bool $useDatatables): void
+    {
+        $webPhp    = base_path('routes/web.php');
+        $content   = File::get($webPhp);
+        $routeBase = Str::kebab(Str::plural($model));
+        $ctrlClass = "{$model}Controller";
+        $useImport = "use App\\Http\\Controllers\\{$ctrlClass};";
+
+        // Skip if route already registered
+        if (str_contains($content, "'{$routeBase}.index'") || str_contains($content, "'{$routeBase}'")) {
+            return;
+        }
+
+        // Add use import if not present
+        if (!str_contains($content, $useImport)) {
+            $content = str_replace(
+                'use Illuminate\\Support\\Facades\\Route;',
+                $useImport . "\n" . 'use Illuminate\\Support\\Facades\\Route;',
+                $content
+            );
+        }
+
+        // Build route lines
+        $entry = "\n    // {$model}\n";
+        if ($useDatatables) {
+            $entry .= "    Route::get('/{$routeBase}/data', [{$ctrlClass}::class, 'data'])->name('{$routeBase}.data');\n";
+        }
+        $entry .= "    Route::resource('{$routeBase}', {$ctrlClass}::class)->except(['show']);\n";
+
+        // Insert before marker, fall back to end of group
+        $marker = '    // @crud-routes';
+        if (str_contains($content, $marker)) {
+            $content = str_replace($marker, $entry . $marker, $content);
+        } else {
+            $content = preg_replace('/(\n\}\);\s*$)/', $entry . '$1', $content);
+        }
+
+        File::put($webPhp, $content);
+    }
+
+    private function injectMenuItem(string $model, string $label, string $iconPath): void
+    {
+        $layoutPath = resource_path('views/layouts/app.blade.php');
+        $content    = File::get($layoutPath);
+        $routeBase  = Str::kebab(Str::plural($model));
+
+        $startMarker = '{{-- @crud-menu-items-start --}}';
+        $endMarker   = '{{-- @crud-menu-items-end --}}';
+
+        if (!str_contains($content, $startMarker)) {
+            throw new \RuntimeException('Marcador de menú no encontrado en app.blade.php.');
+        }
+
+        // Skip if already added
+        if (str_contains($content, "route('{$routeBase}.index')")) {
+            return;
+        }
+
+        $svg  = '<svg class="w-4 h-4 flex-shrink-0" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">';
+        $svg .= '<path stroke-linecap="round" stroke-linejoin="round" d="' . e($iconPath) . '"/>';
+        $svg .= '</svg>';
+
+        $item  = "\n            <!-- {$model} -->\n";
+        $item .= "            <a href=\"{{ route('{$routeBase}.index') }}\"\n";
+        $item .= "               class=\"sidebar-link {{ request()->routeIs('{$routeBase}.*') ? 'active' : '' }}\">\n";
+        $item .= "                {$svg}\n";
+        $item .= "                {$label}\n";
+        $item .= "            </a>";
+
+        // Check if section heading is needed (first item)
+        preg_match('/' . preg_quote($startMarker, '/') . '(.*?)' . preg_quote($endMarker, '/') . '/s', $content, $m);
+        if (!str_contains($m[1] ?? '', '<a ')) {
+            $item = "\n            <div class=\"pt-5 pb-2\">\n"
+                  . "                <span class=\"px-3 text-[10px] font-bold uppercase tracking-[0.15em] text-white/50\">Módulos</span>\n"
+                  . "            </div>"
+                  . $item;
+        }
+
+        $content = str_replace($endMarker, $item . "\n            " . $endMarker, $content);
+        File::put($layoutPath, $content);
+    }
+
+    // ─── Meta helpers ─────────────────────────────────────────────────────────
+
+    private function saveMeta(string $model, array $data): void
+    {
+        $dir = storage_path('app/' . self::META_DIR);
+        File::ensureDirectoryExists($dir);
+        File::put("{$dir}/{$model}.json", json_encode($data, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE));
+    }
+
+    private function loadMeta(string $model): ?array
+    {
+        $path = storage_path('app/' . self::META_DIR . '/' . $model . '.json');
+        if (!File::exists($path)) return null;
+        return json_decode(File::get($path), true);
+    }
+
+    private function loadAllMeta(): array
+    {
+        $dir = storage_path('app/' . self::META_DIR);
+        if (!File::isDirectory($dir)) return [];
+
+        return collect(File::files($dir))
+            ->filter(fn($f) => $f->getExtension() === 'json')
+            ->map(fn($f) => json_decode(File::get($f->getPathname()), true))
+            ->filter()
+            ->sortByDesc('generated_at')
+            ->values()
+            ->all();
     }
 }

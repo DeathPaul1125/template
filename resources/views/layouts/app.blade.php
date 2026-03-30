@@ -132,6 +132,9 @@
             </a>
             @endcan
 
+            {{-- @crud-menu-items-start --}}
+            {{-- @crud-menu-items-end --}}
+
             @role('super-admin')
             <!-- Herramientas -->
             <div class="pt-5 pb-2">
