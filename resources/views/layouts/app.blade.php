@@ -17,7 +17,7 @@
     <!-- dynamic brand color -->
     @php
         $brandColor = \App\Models\Setting::get('brand_color', '#0e8ceb');
-        
+
         // Convert hex to rgb for tailwind shadows
         list($r, $g, $b) = sscanf($brandColor, "#%02x%02x%02x");
         $brandColorRgb = "$r, $g, $b";
@@ -35,7 +35,7 @@
         .focus\:border-brand-500:focus { border-color: var(--brand-color) !important; }
         .from-brand-600 { --tw-gradient-from: var(--brand-color) !important; }
         .to-brand-800 { --tw-gradient-to: var(--brand-color) !important; filter: brightness(0.8); }
-        
+
         /* Elite Blue Sidebar Active State */
         .sidebar-link.active {
             @apply bg-blue-600/10 text-blue-400 border border-blue-500/20 shadow-[0_0_15px_-5px_rgba(14,140,235,0.4)];
@@ -45,6 +45,9 @@
     <!-- Scripts & Styles -->
     @vite(['resources/css/app.css', 'resources/js/app.js'])
     @livewireStyles
+
+    <!-- DataTables CSS -->
+    <link rel="stylesheet" href="https://cdn.datatables.net/2.1.8/css/dataTables.tailwindcss.min.css">
 </head>
 <body class="bg-gray-50 dark:bg-slate-900 h-full font-sans antialiased">
 
@@ -255,5 +258,11 @@
 
 @stack('modals')
 @livewireScripts
+
+<!-- jQuery + DataTables JS -->
+<script src="https://code.jquery.com/jquery-3.7.1.min.js" integrity="sha256-/JqT3SQfawRcv/BIHPThkBvs0OEvtFFmqPF/lYI/Cxo=" crossorigin="anonymous"></script>
+<script src="https://cdn.datatables.net/2.1.8/js/dataTables.min.js"></script>
+<script src="https://cdn.datatables.net/2.1.8/js/dataTables.tailwindcss.min.js"></script>
+@stack('scripts')
 </body>
 </html>
