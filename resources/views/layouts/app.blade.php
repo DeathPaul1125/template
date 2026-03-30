@@ -89,7 +89,23 @@
                 Dashboard
             </a>
 
-            <!-- Administración -->
+            {{-- @crud-menu-items-start --}}
+            @php $crudMetas = collect(\Illuminate\Support\Facades\File::files(storage_path('app/crud-generator')))->map(fn($f) => json_decode(file_get_contents($f), true))->filter()->values(); @endphp
+            @if($crudMetas->count() > 0)
+            <div class="pt-5 pb-2">
+                <span class="px-3 text-[10px] font-bold uppercase tracking-[0.15em] text-white/50">M&#243;dulos</span>
+            </div>
+            @foreach($crudMetas as $crudMeta)
+            <a href="{{ route(\Illuminate\Support\Str::kebab(\Illuminate\Support\Str::plural($crudMeta['model'])) . '.index') }}"
+               class="sidebar-link {{ request()->routeIs(\Illuminate\Support\Str::kebab(\Illuminate\Support\Str::plural($crudMeta['model'])) . '.*') ? 'active' : '' }}">
+                <svg class="w-4 h-4 flex-shrink-0" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="{{ $crudMeta['menu_icon'] ?? 'M4 6h16M4 10h16M4 14h16M4 18h16' }}"/></svg>
+                {{ $crudMeta['menu_label'] ?? $crudMeta['model'] }}
+            </a>
+            @endforeach
+            @endif
+            {{-- @crud-menu-items-end --}}
+
+            <!-- Administraci&#243;n -->
             @canany(['manage-users', 'manage-roles'])
             <div class="pt-5 pb-2">
                 <span class="px-3 text-[10px] font-bold uppercase tracking-[0.15em] text-white/50">
@@ -132,18 +148,7 @@
             </a>
             @endcan
 
-            {{-- @crud-menu-items-start --}}
 
-            <div class="pt-5 pb-2">
-                <span class="px-3 text-[10px] font-bold uppercase tracking-[0.15em] text-white/50">Módulos</span>
-            </div>
-            <!-- Product -->
-            <a href="{{ route('products.index') }}"
-               class="sidebar-link {{ request()->routeIs('products.*') ? 'active' : '' }}">
-                <svg class="w-4 h-4 flex-shrink-0" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"/></svg>
-                Productos
-            </a>
-            {{-- @crud-menu-items-end --}}
 
             @role('super-admin')
             <!-- Herramientas -->
