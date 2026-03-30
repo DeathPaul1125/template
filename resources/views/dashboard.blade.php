@@ -13,35 +13,39 @@
         @endphp
 
         @foreach($stats as $stat)
-        <div class="bg-white dark:bg-slate-800 rounded-2xl p-5 border border-gray-200 dark:border-slate-700 shadow-sm hover:shadow-md transition-shadow">
+        <div class="premium-card">
             <div class="flex items-start justify-between">
                 <div>
-                    <p class="text-sm font-medium text-slate-500 dark:text-slate-400">{{ $stat['label'] }}</p>
-                    <p class="mt-2 text-3xl font-bold text-slate-800 dark:text-white">{{ $stat['value'] }}</p>
-                    <span class="mt-1 inline-flex items-center gap-x-1 text-xs font-medium text-teal-600 dark:text-teal-400">
+                    <p class="text-sm font-semibold tracking-wide uppercase text-slate-500 dark:text-slate-500">{{ $stat['label'] }}</p>
+                    <p class="mt-3 text-4xl font-extrabold text-slate-800 dark:text-white tracking-tight">{{ $stat['value'] }}</p>
+                    <div class="mt-4 flex items-center gap-x-1.5 px-2.5 py-1 rounded-full text-xs font-bold w-fit
+                        @if($stat['color'] === 'brand') bg-brand-50 text-brand-700 dark:bg-brand-500/10 dark:text-brand-400
+                        @elseif($stat['color'] === 'violet') bg-violet-50 text-violet-700 dark:bg-violet-500/10 dark:text-violet-400
+                        @elseif($stat['color'] === 'amber') bg-amber-50 text-amber-700 dark:bg-amber-500/10 dark:text-amber-400
+                        @else bg-teal-50 text-teal-700 dark:bg-teal-500/10 dark:text-teal-400 @endif">
                         {{ $stat['change'] }}
-                    </span>
+                    </div>
                 </div>
-                <div class="p-3 rounded-xl
-                    @if($stat['color'] === 'brand') bg-brand-50 dark:bg-brand-900/30
-                    @elseif($stat['color'] === 'violet') bg-violet-50 dark:bg-violet-900/30
-                    @elseif($stat['color'] === 'amber') bg-amber-50 dark:bg-amber-900/30
-                    @else bg-teal-50 dark:bg-teal-900/30 @endif">
+                <div class="p-3.5 rounded-2xl shadow-sm border border-white/20
+                    @if($stat['color'] === 'brand') bg-brand-600 text-white shadow-brand-500/20
+                    @elseif($stat['color'] === 'violet') bg-violet-600 text-white shadow-violet-500/20
+                    @elseif($stat['color'] === 'amber') bg-amber-600 text-white shadow-amber-500/20
+                    @else bg-teal-600 text-white shadow-teal-500/20 @endif">
                     @if($stat['icon'] === 'users')
-                    <svg class="w-6 h-6 text-brand-600 dark:text-brand-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"/>
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"/>
                     </svg>
                     @elseif($stat['icon'] === 'shield')
-                    <svg class="w-6 h-6 text-violet-600 dark:text-violet-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"/>
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"/>
                     </svg>
                     @elseif($stat['icon'] === 'key')
-                    <svg class="w-6 h-6 text-amber-600 dark:text-amber-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z"/>
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z"/>
                     </svg>
                     @else
-                    <svg class="w-6 h-6 text-teal-600 dark:text-teal-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
                     </svg>
                     @endif
                 </div>

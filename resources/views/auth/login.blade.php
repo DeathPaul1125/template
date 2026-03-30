@@ -26,11 +26,11 @@
 
         <div class="relative z-10 text-center">
             <!-- Logo -->
-            <div class="mb-8 inline-flex items-center justify-center w-20 h-20 bg-white/10 backdrop-blur-sm rounded-3xl border border-white/20 shadow-2xl overflow-hidden">
+            <div class="mb-8 inline-flex items-center justify-center w-24 h-24 bg-white/10 backdrop-blur-md rounded-[2rem] border border-white/20 shadow-2xl overflow-hidden animate-bounce-slow">
                 @if($logo = \App\Models\Setting::get('site_logo'))
-                    <img src="{{ $logo }}" alt="Logo" class="w-12 h-12 object-contain">
+                    <img src="{{ $logo }}" alt="Logo" class="w-14 h-14 object-contain">
                 @else
-                    <svg class="w-10 h-10 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <svg class="w-12 h-12 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/>
                     </svg>
                 @endif

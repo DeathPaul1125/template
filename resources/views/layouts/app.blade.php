@@ -12,26 +12,29 @@
 
     <!-- Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
 
     <!-- dynamic brand color -->
     @php
-        $brandColor = \App\Models\Setting::get('brand_color', '#6366f1');
-        // Convert hex to rgb for tailwind opacity support if needed, but here we just use the hex
+        $brandColor = \App\Models\Setting::get('brand_color', '#8b5cf6');
+        
+        // Convert hex to rgb for tailwind shadows
+        list($r, $g, $b) = sscanf($brandColor, "#%02x%02x%02x");
+        $brandColorRgb = "$r, $g, $b";
     @endphp
     <style>
         :root {
             --brand-color: {{ $brandColor }};
-            --brand-color-hover: {{ $brandColor }}dd; /* simple alpha for hover */
+            --brand-color-rgb: {{ $brandColorRgb }};
+            --brand-color-hover: {{ $brandColor }}dd;
         }
         .bg-brand-600 { background-color: var(--brand-color) !important; }
-        .hover\:bg-brand-700:hover { background-color: var(--brand-color-hover) !important; }
+        .hover\:bg-brand-700:hover { background-color: var(--brand-color) !important; filter: brightness(0.9); }
         .text-brand-600 { color: var(--brand-color) !important; }
         .border-brand-500 { border-color: var(--brand-color) !important; }
         .focus\:border-brand-500:focus { border-color: var(--brand-color) !important; }
-        .focus\:ring-brand-500:focus { --tw-ring-color: var(--brand-color) !important; }
-        .from-brand-500 { --tw-gradient-from: var(--brand-color) !important; --tw-gradient-to: var(--brand-color)00 !important; --tw-gradient-stops: var(--tw-gradient-from), var(--tw-gradient-to) !important; }
-        .to-brand-700 { --tw-gradient-to: var(--brand-color-hover) !important; }
+        .from-brand-600 { --tw-gradient-from: var(--brand-color) !important; }
+        .to-brand-800 { --tw-gradient-to: var(--brand-color) !important; filter: brightness(0.8); }
     </style>
 
     <!-- Scripts & Styles -->
@@ -42,7 +45,7 @@
 
 {{-- ===== SIDEBAR ===== --}}
 <div id="hs-application-sidebar"
-     class="hs-overlay [--auto-close:lg] hs-overlay-open:translate-x-0 -translate-x-full transition-all duration-300 transform hidden fixed top-0 start-0 bottom-0 z-[60] w-64 bg-white border-e border-gray-200 overflow-y-auto lg:block lg:translate-x-0 lg:end-auto lg:bottom-0 [&::-webkit-scrollbar]:w-2 [&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-track]:bg-gray-100 [&::-webkit-scrollbar-thumb]:bg-gray-300 dark:[&::-webkit-scrollbar-track]:bg-slate-700 dark:[&::-webkit-scrollbar-thumb]:bg-slate-500 dark:bg-slate-900 dark:border-slate-700"
+     class="hs-overlay [--auto-close:lg] hs-overlay-open:translate-x-0 -translate-x-full transition-all duration-500 transform hidden fixed top-0 start-0 bottom-0 z-[60] w-64 glass dark:glass-dark overflow-y-auto lg:block lg:translate-x-0 lg:end-auto lg:bottom-0 [&::-webkit-scrollbar]:w-2 [&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-track]:bg-gray-100 [&::-webkit-scrollbar-thumb]:bg-gray-300 dark:[&::-webkit-scrollbar-track]:bg-slate-700 dark:[&::-webkit-scrollbar-thumb]:bg-slate-500"
      aria-label="Sidebar">
 
     <nav class="w-64 flex flex-col h-full">
@@ -183,7 +186,7 @@
 <div class="w-full lg:ps-64">
 
     {{-- ===== TOPBAR ===== --}}
-    <div class="sticky top-0 inset-x-0 z-20 bg-white border-b border-gray-200 dark:bg-slate-900 dark:border-slate-700">
+    <div class="sticky top-0 inset-x-0 z-20 glass dark:glass-dark border-b-0">
         <div class="flex items-center justify-between px-4 sm:px-6 py-3">
             <!-- Mobile: Toggle Sidebar -->
             <div class="flex items-center gap-x-3">
@@ -228,7 +231,7 @@
     {{-- ===== FIN TOPBAR ===== --}}
 
     {{-- ===== CONTENIDO ===== --}}
-    <main class="p-4 sm:p-6 lg:p-8">
+    <main class="p-4 sm:p-6 lg:p-8 animate-in">
         @if (session('success'))
             <div class="mb-4 p-4 rounded-xl bg-teal-50 border border-teal-200 dark:bg-teal-900/20 dark:border-teal-700 flex items-start gap-x-3">
                 <svg class="w-5 h-5 text-teal-500 mt-0.5 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
