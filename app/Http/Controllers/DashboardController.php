@@ -63,14 +63,26 @@ class DashboardController extends Controller
 
     // ── Private data helpers ─────────────────────────────────────────────────
 
+    /**
+     * Devuelve un query builder base que excluye registros con soft-delete.
+     */
+    private function baseQuery(string $table)
+    {
+        $q = DB::table($table);
+        if (Schema::hasColumn($table, 'deleted_at')) {
+            $q->whereNull('deleted_at');
+        }
+        return $q;
+    }
+
     private function statData(string $table, ?string $field, string $op)
     {
         $value = match ($op) {
-            'sum'   => number_format((float) DB::table($table)->sum($field ?: 'id'), 2),
-            'avg'   => number_format((float) DB::table($table)->avg($field ?: 'id'), 2),
-            'max'   => DB::table($table)->max($field ?: 'id') ?? 0,
-            'min'   => DB::table($table)->min($field ?: 'id') ?? 0,
-            default => number_format(DB::table($table)->count()),
+            'sum'   => number_format((float) $this->baseQuery($table)->sum($field ?: 'id'), 2),
+            'avg'   => number_format((float) $this->baseQuery($table)->avg($field ?: 'id'), 2),
+            'max'   => $this->baseQuery($table)->max($field ?: 'id') ?? 0,
+            'min'   => $this->baseQuery($table)->min($field ?: 'id') ?? 0,
+            default => number_format($this->baseQuery($table)->count()),
         };
         return response()->json(['value' => $value]);
     }
@@ -95,9 +107,9 @@ class DashboardController extends Controller
             };
         };
 
-        $total    = $compute(DB::table($table));
-        $current  = $compute(DB::table($table)->where('created_at', '>=', $thisStart));
-        $previous = $compute(DB::table($table)->whereBetween('created_at', [$prevStart, $prevEnd]));
+        $total    = $compute($this->baseQuery($table));
+        $current  = $compute($this->baseQuery($table)->where('created_at', '>=', $thisStart));
+        $previous = $compute($this->baseQuery($table)->whereBetween('created_at', [$prevStart, $prevEnd]));
 
         $change = null;
         $trend  = null;
@@ -136,7 +148,7 @@ class DashboardController extends Controller
         }
         $select = array_values(array_filter($select, fn($c) => Schema::hasColumn($table, $c)));
 
-        $records = DB::table($table)->latest('id')->take($limit)->get($select);
+        $records = $this->baseQuery($table)->latest('id')->take($limit)->get($select);
         $typeMap  = collect($fields)->pluck('type', 'name')->toArray();
 
         return response()->json([
@@ -152,7 +164,7 @@ class DashboardController extends Controller
             return response()->json(['error' => "Campo '{$field}' no existe en '{$table}'."], 422);
         }
 
-        $data = DB::table($table)
+        $data = $this->baseQuery($table)
             ->selectRaw("`{$field}`, COUNT(*) as total")
             ->groupBy($field)
             ->orderByDesc('total')
@@ -171,7 +183,7 @@ class DashboardController extends Controller
             return response()->json(['error' => "'{$table}' no tiene columna created_at."], 422);
         }
 
-        $data = DB::table($table)
+        $data = $this->baseQuery($table)
             ->selectRaw("DATE(created_at) as fecha, COUNT(*) as total")
             ->whereNotNull('created_at')
             ->where('created_at', '>=', now()->subDays(60))
@@ -197,7 +209,7 @@ class DashboardController extends Controller
         }
 
         $select  = array_unique(array_filter([$labelCol ?? 'id', $field]));
-        $records = DB::table($table)->select($select)->orderByDesc($field)->limit($limit)->get();
+        $records = $this->baseQuery($table)->select($select)->orderByDesc($field)->limit($limit)->get();
 
         $labelKey = $labelCol ?? 'id';
         $items    = $records->map(fn($r) => [
