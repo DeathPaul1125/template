@@ -1,4 +1,4 @@
-﻿<x-app-layout>
+<x-app-layout>
     <x-slot name="header">Dashboard</x-slot>
 
     @push('scripts')
@@ -239,7 +239,7 @@
         <div class="flex items-center justify-between mb-6">
             <div>
                 <h1 class="text-xl font-bold text-slate-800 dark:text-white">Dashboard</h1>
-                <p class="text-xs text-slate-400 mt-0.5" x-show="editMode">Modo de ediciÃ³n activo â€” arrastra los widgets o usa las flechas para reorganizarlos.</p>
+                <p class="text-xs text-slate-400 mt-0.5" x-show="editMode">Modo de edicion activo arrastra los widgets o usa las flechas para reorganizarlos.</p>
             </div>
             <div class="flex items-center gap-x-3">
                 <span x-show="savedOk" x-transition class="text-xs text-emerald-600 dark:text-emerald-400 font-medium flex items-center gap-x-1">
@@ -273,12 +273,12 @@
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 17V7m0 10a2 2 0 01-2 2H5a2 2 0 01-2-2V7a2 2 0 012-2h2a2 2 0 012 2m0 10a2 2 0 002 2h2a2 2 0 002-2M9 7a2 2 0 012-2h2a2 2 0 012 2m0 10V7m0 10a2 2 0 002 2h2a2 2 0 002-2V7a2 2 0 00-2-2h-2a2 2 0 00-2 2"/>
                 </svg>
             </div>
-            <p class="text-base font-semibold text-slate-600 dark:text-slate-300 mb-1">Dashboard vacÃ­o</p>
+            <p class="text-base font-semibold text-slate-600 dark:text-slate-300 mb-1">Dashboard vacio</p>
             <p class="text-sm text-slate-400 mb-6 max-w-xs">
                 @role('super-admin')
-                Activa Â«Editar dashboardÂ» y agrega tarjetas, tablas y grÃ¡ficas con datos de tus modelos.
+                Activa «Editar dashboard» y agrega tarjetas, tablas y graficas con datos de tus modelos.
                 @else
-                El administrador aÃºn no ha configurado el dashboard.
+                El administrador aun no ha configurado el dashboard.
                 @endrole
             </p>
             @role('super-admin')
@@ -402,7 +402,7 @@
                                       x-text="(data?.records?.length || 0) + ' reg.'"></span>
                                 <template x-if="available.find(a => a.model === cfg.model)?.routeBase">
                                     <a :href="'/' + available.find(a => a.model === cfg.model)?.routeBase"
-                                       class="text-[10px] font-semibold text-brand-600 hover:underline">Ver todos â†’</a>
+                                       class="text-[10px] font-semibold text-brand-600 hover:underline">Ver todos</a>
                                 </template>
                             </div>
                         </div>
@@ -482,12 +482,15 @@
         </div>
 
         {{-- â”€â”€â”€ Add / Edit Widget Slide-Over â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ --}}
+        <template x-teleport="body">
         <div x-show="addOpen"
              x-transition:enter="transition ease-out duration-200" x-transition:enter-start="opacity-0" x-transition:enter-end="opacity-100"
              x-transition:leave="transition ease-in duration-150"  x-transition:leave-start="opacity-100" x-transition:leave-end="opacity-0"
              class="fixed inset-0 bg-black/40 z-40 backdrop-blur-sm" @click.self="addOpen = false">
         </div>
+        </template>
 
+        <template x-teleport="body">
         <div x-show="addOpen"
              x-transition:enter="transition ease-out duration-250 transform" x-transition:enter-start="translate-x-full" x-transition:enter-end="translate-x-0"
              x-transition:leave="transition ease-in duration-200 transform"  x-transition:leave-start="translate-x-0"    x-transition:leave-end="translate-x-full"
@@ -520,13 +523,13 @@
                 <div x-show="step === 1" class="grid grid-cols-1 gap-3">
                     @php
                     $types = [
-                        ['key' => 'stat',         'label' => 'Tarjeta KPI',        'desc' => 'NÃºmero Ãºnico: conteo, suma, promedioâ€¦',          'icon' => 'M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z'],
+                        ['key' => 'stat',         'label' => 'Tarjeta KPI',        'desc' => 'Numero unico: conteo, suma, promedio...',          'icon' => 'M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z'],
                         ['key' => 'growth-stat',  'label' => 'Tarjeta Tendencia',   'desc' => 'Total con % de cambio vs. mes anterior',         'icon' => 'M13 7h8m0 0v8m0-8l-8 8-4-4-6 6'],
-                        ['key' => 'recent-table', 'label' => 'Tabla Reciente',      'desc' => 'Ãšltimos N registros de un modelo',               'icon' => 'M3 10h18M3 6h18M3 14h18M3 18h18'],
-                        ['key' => 'top-list',     'label' => 'Lista Top N',         'desc' => 'Ranking de registros por campo numÃ©rico',        'icon' => 'M4 6h16M4 10h10M4 14h6M4 18h3'],
-                        ['key' => 'line-chart',   'label' => 'GrÃ¡fica de LÃ­neas',   'desc' => 'Registros por fecha (Ãºltimos 60 dÃ­as)',          'icon' => 'M7 12l3-3 3 3 4-4M8 21l4-4 4 4M3 4h13M3 8h9m-9 4h6'],
-                        ['key' => 'bar-chart',    'label' => 'GrÃ¡fica de Barras',   'desc' => 'Conteo agrupado por campo',                     'icon' => 'M16 8v8m-4-5v5m-4-2v2m-2 4h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z'],
-                        ['key' => 'pie-chart',    'label' => 'GrÃ¡fica de Dona',     'desc' => 'DistribuciÃ³n porcentual por campo',             'icon' => 'M11 3.055A9.001 9.001 0 1020.945 13H11V3.055z M20.488 9H15V3.512A9.025 9.025 0 0120.488 9z'],
+                        ['key' => 'recent-table', 'label' => 'Tabla Reciente',      'desc' => 'Ultimos N registros de un modelo',               'icon' => 'M3 10h18M3 6h18M3 14h18M3 18h18'],
+                        ['key' => 'top-list',     'label' => 'Lista Top N',         'desc' => 'Ranking de registros por campo numerico',        'icon' => 'M4 6h16M4 10h10M4 14h6M4 18h3'],
+                        ['key' => 'line-chart',   'label' => 'Grafica de Lineas',   'desc' => 'Registros por fecha (ultimos 60 dias)',          'icon' => 'M7 12l3-3 3 3 4-4M8 21l4-4 4 4M3 4h13M3 8h9m-9 4h6'],
+                        ['key' => 'bar-chart',    'label' => 'Grafica de Barras',   'desc' => 'Conteo agrupado por campo',                     'icon' => 'M16 8v8m-4-5v5m-4-2v2m-2 4h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z'],
+                        ['key' => 'pie-chart',    'label' => 'Grafica de Dona',     'desc' => 'Distribucion porcentual por campo',             'icon' => 'M11 3.055A9.001 9.001 0 1020.945 13H11V3.055z M20.488 9H15V3.512A9.025 9.025 0 0120.488 9z'],
                     ];
                     @endphp
 
@@ -607,7 +610,7 @@
                     {{-- Recent table: limit --}}
                     <template x-if="nw.type === 'recent-table'">
                         <div>
-                            <label class="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-1.5">MÃ¡ximo de filas</label>
+                            <label class="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-1.5">Maximo de filas</label>
                             <select x-model.number="nw.limit"
                                     class="py-2.5 px-3 block w-full border-gray-200 rounded-xl text-sm focus:border-brand-500 focus:ring-brand-500 dark:bg-slate-800 dark:border-slate-700 dark:text-slate-300">
                                 <option value="5">5 registros</option>
@@ -622,7 +625,7 @@
                     <template x-if="nw.type === 'top-list'">
                         <div class="space-y-4">
                             <div>
-                                <label class="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-1.5">Campo de medida (numÃ©rico)</label>
+                                <label class="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-1.5">Campo de medida (numerico)</label>
                                 <select x-model="nw.field"
                                         class="py-2.5 px-3 block w-full border-gray-200 rounded-xl text-sm focus:border-brand-500 focus:ring-brand-500 dark:bg-slate-800 dark:border-slate-700 dark:text-slate-300">
                                     <template x-for="f in modelFields()" :key="f.name">
@@ -631,7 +634,7 @@
                                 </select>
                             </div>
                             <div>
-                                <label class="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-1.5">MÃ¡ximo de items</label>
+                                <label class="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-1.5">Maximo de items</label>
                                 <select x-model.number="nw.limit"
                                         class="py-2.5 px-3 block w-full border-gray-200 rounded-xl text-sm focus:border-brand-500 focus:ring-brand-500 dark:bg-slate-800 dark:border-slate-700 dark:text-slate-300">
                                     <option value="5">Top 5</option>
@@ -658,20 +661,20 @@
                     <template x-if="nw.type === 'line-chart'">
                         <div class="flex items-start gap-x-2 bg-blue-50 dark:bg-blue-900/20 border border-blue-100 dark:border-blue-800 rounded-xl p-3">
                             <svg class="w-4 h-4 text-blue-500 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
-                            <p class="text-xs text-blue-700 dark:text-blue-300">Muestra registros creados por dÃ­a usando la columna <code class="font-mono bg-blue-100 dark:bg-blue-900/40 px-1 rounded">created_at</code> (Ãºltimos 60 dÃ­as).</p>
+                            <p class="text-xs text-blue-700 dark:text-blue-300">Muestra registros creados por día usando la columna <code class="font-mono bg-blue-100 dark:bg-blue-900/40 px-1 rounded">created_at</code> (últimos 60 días).</p>
                         </div>
                     </template>
 
                     {{-- Title --}}
                     <div>
-                        <label class="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-1.5">TÃ­tulo <span class="font-normal opacity-60">(opcional)</span></label>
-                        <input type="text" x-model="nw.title" placeholder="Se genera automÃ¡ticamente"
+                        <label class="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-1.5">Título <span class="font-normal opacity-60">(opcional)</span></label>
+                        <input type="text" x-model="nw.title" placeholder="Se genera automáticamente"
                                class="py-2.5 px-3 block w-full border-gray-200 rounded-xl text-sm focus:border-brand-500 focus:ring-brand-500 dark:bg-slate-800 dark:border-slate-700 dark:text-slate-300">
                     </div>
 
                     {{-- Size picker --}}
                     <div>
-                        <label class="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-1.5">TamaÃ±o</label>
+                        <label class="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-1.5">Tamaño</label>
                         <div class="grid grid-cols-4 gap-2">
                             @foreach([1 => '1/4', 2 => '1/2', 3 => '3/4', 4 => 'Full'] as $s => $label)
                             <button type="button" @click="nw.size = {{ $s }}"
@@ -689,7 +692,7 @@
                 <button @click="editingId ? (addOpen = false) : (step === 1 ? (addOpen = false) : (step = 1))"
                         class="px-4 py-2 text-sm font-medium text-slate-600 dark:text-slate-400 hover:text-slate-800 dark:hover:text-white transition-colors">
                     <span x-show="editingId || step === 1">Cancelar</span>
-                    <span x-show="!editingId && step === 2">â† AtrÃ¡s</span>
+                    <span x-show="!editingId && step === 2">← Atrás</span>
                 </button>
                 <button x-show="step === 2" @click="addWidget()"
                         class="flex-1 py-2.5 bg-brand-600 hover:bg-brand-700 text-white text-sm font-semibold rounded-xl transition-all shadow-sm"
@@ -697,6 +700,7 @@
                 </button>
             </div>
         </div>
+        </template>
 
     </div>
 </x-app-layout>
