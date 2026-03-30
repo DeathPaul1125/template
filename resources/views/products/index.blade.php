@@ -24,6 +24,9 @@
                             <th>Description</th>
                             <th>Price</th>
                             <th>Sale Price</th>
+                            @if(auth()->user()?->hasRole('super-admin'))
+                            <th>Estado</th>
+                            @endif
                             <th>Acciones</th>
                         </tr>
                     </thead>
@@ -113,6 +116,9 @@ $(function () {
             { data: 'description' },
             { data: 'price' },
             { data: 'sale_price' },
+            @if(auth()->user()?->hasRole('super-admin'))
+            { data: 'status', orderable: false, searchable: false },
+            @endif
             { data: 'actions', orderable: false, searchable: false }
         ]
     });

@@ -80,5 +80,12 @@ Route::middleware([
     // Product
     Route::get('/products/data', [ProductController::class, 'data'])->name('products.data');
     Route::resource('products', ProductController::class)->except(['show']);
+    // Product: restaurar y eliminar definitivo (solo super-admin)
+    Route::post('/products/{id}/restore', [ProductController::class, 'restore'])
+        ->name('products.restore')
+        ->middleware('role:super-admin');
+    Route::delete('/products/{id}/force-delete', [ProductController::class, 'forceDelete'])
+        ->name('products.force-delete')
+        ->middleware('role:super-admin');
     // @crud-routes
 });

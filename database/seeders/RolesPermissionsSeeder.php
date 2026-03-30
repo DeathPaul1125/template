@@ -17,11 +17,19 @@ class RolesPermissionsSeeder extends Seeder
 
         // ── Permisos ────────────────────────────────────────────────
         $permissions = [
+            // Sistema
             'manage-users',
             'manage-roles',
             'manage-settings',
             'view-dashboard',
             'view-reports',
+            // Products
+            'view-products',
+            'create-products',
+            'edit-products',
+            'delete-products',
+            'restore-products',
+            'force-delete-products',
         ];
 
         foreach ($permissions as $permission) {
