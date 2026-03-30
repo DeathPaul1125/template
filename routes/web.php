@@ -2,17 +2,29 @@
 
 use App\Http\Controllers\RoleController;
 use App\Http\Controllers\UserController;
+use App\Http\Controllers\InstallerController;
 use Illuminate\Support\Facades\Route;
+
+// Rutas del instalador (Wizard)
+Route::middleware(['redirect.installed'])->prefix('install')->name('install.')->group(function () {
+    Route::get('/welcome', [InstallerController::class, 'welcome'])->name('welcome');
+    Route::get('/database', [InstallerController::class, 'database'])->name('database');
+    Route::post('/database', [InstallerController::class, 'saveDatabase'])->name('saveDatabase');
+    Route::get('/admin', [InstallerController::class, 'admin'])->name('admin');
+    Route::post('/admin', [InstallerController::class, 'saveAdmin'])->name('saveAdmin');
+    Route::get('/finalized', [InstallerController::class, 'finalized'])->name('finalized');
+});
 
 // Ruta raíz → redirige a login o dashboard
 Route::get('/', function () {
     return auth()->check()
         ? redirect()->route('dashboard')
         : redirect()->route('login');
-});
+})->middleware('check.installed');
 
 // Rutas protegidas
 Route::middleware([
+    'check.installed',
     'auth:sanctum',
     config('jetstream.auth_session'),
     'verified',

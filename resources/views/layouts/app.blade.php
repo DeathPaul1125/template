@@ -16,7 +16,7 @@
 
     <!-- dynamic brand color -->
     @php
-        $brandColor = \App\Models\Setting::get('brand_color', '#8b5cf6');
+        $brandColor = \App\Models\Setting::get('brand_color', '#0e8ceb');
         
         // Convert hex to rgb for tailwind shadows
         list($r, $g, $b) = sscanf($brandColor, "#%02x%02x%02x");
@@ -35,6 +35,11 @@
         .focus\:border-brand-500:focus { border-color: var(--brand-color) !important; }
         .from-brand-600 { --tw-gradient-from: var(--brand-color) !important; }
         .to-brand-800 { --tw-gradient-to: var(--brand-color) !important; filter: brightness(0.8); }
+        
+        /* Elite Blue Sidebar Active State */
+        .sidebar-link.active {
+            @apply bg-blue-600/10 text-blue-400 border border-blue-500/20 shadow-[0_0_15px_-5px_rgba(14,140,235,0.4)];
+        }
     </style>
 
     <!-- Scripts & Styles -->
@@ -45,8 +50,8 @@
 
 {{-- ===== SIDEBAR ===== --}}
 <div id="hs-application-sidebar"
-     class="hs-overlay [--auto-close:lg] hs-overlay-open:translate-x-0 -translate-x-full transition-all duration-500 transform hidden fixed top-0 start-0 bottom-0 z-[60] w-64 bg-slate-900 overflow-y-auto lg:block lg:translate-x-0 lg:end-auto lg:bottom-0 [&::-webkit-scrollbar]:w-2 [&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-track]:bg-slate-800 [&::-webkit-scrollbar-thumb]:bg-slate-700"
-     style="background-color: #0f172a !important;"
+     class="hs-overlay [--auto-close:lg] hs-overlay-open:translate-x-0 -translate-x-full transition-all duration-500 transform hidden fixed top-0 start-0 bottom-0 z-[60] w-64 bg-slate-950 border-e border-white/5 overflow-y-auto lg:block lg:translate-x-0 lg:end-auto lg:bottom-0 [&::-webkit-scrollbar]:w-2 [&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-track]:bg-slate-950 [&::-webkit-scrollbar-thumb]:bg-slate-800"
+     style="background-color: #020617 !important;"
      aria-label="Sidebar">
 
     <nav class="w-64 flex flex-col h-full bg-transparent">
@@ -142,10 +147,10 @@
         </div>
 
         <!-- User card bottom -->
-        <div class="px-4 py-4 border-t border-white/10 mt-auto">
+        <div class="px-4 py-4 border-t border-white/5 mt-auto">
             <div class="hs-dropdown [--placement:top-left] relative w-full inline-flex">
-                <button type="button" class="hs-dropdown-toggle w-full flex items-center gap-x-3 py-2 px-2.5 text-sm text-white rounded-xl hover:bg-white/10 transition-all">
-                    <span class="flex-shrink-0 w-8 h-8 rounded-full bg-gradient-to-br from-brand-400 to-brand-600 flex items-center justify-center text-white text-xs font-bold">
+                <button type="button" class="hs-dropdown-toggle w-full flex items-center gap-x-3 py-2 px-2.5 text-sm text-white rounded-xl hover:bg-white/5 transition-all border border-transparent hover:border-white/10 group">
+                    <span class="flex-shrink-0 w-8 h-8 rounded-full bg-gradient-to-br from-blue-400 to-blue-600 flex items-center justify-center text-white text-xs font-bold shadow-lg shadow-blue-500/20">
                         {{ strtoupper(substr(Auth::user()->name, 0, 2)) }}
                     </span>
                     <div class="ms-3 text-start">
@@ -184,7 +189,7 @@
 <div class="w-full lg:ps-64 bg-gray-50 dark:bg-slate-950 min-h-screen transition-colors duration-500">
 
     {{-- ===== TOPBAR ===== --}}
-    <div class="sticky top-0 inset-x-0 z-20 bg-slate-900 border-b border-white/10" style="background-color: #0f172a !important;">
+    <div class="sticky top-0 inset-x-0 z-20 bg-slate-900/80 backdrop-blur-xl border-b border-white/5 shadow-sm" style="background-color: rgba(15, 23, 42, 0.8) !important;">
         <div class="flex items-center justify-between px-4 sm:px-6 py-3">
             <!-- Mobile: Toggle Sidebar -->
             <div class="flex items-center gap-x-3">

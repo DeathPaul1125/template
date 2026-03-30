@@ -12,33 +12,41 @@
 
     <!-- Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
 
     <!-- dynamic brand color -->
     @php
-        $brandColor = \App\Models\Setting::get('brand_color', '#6366f1');
+        $brandColor = \App\Models\Setting::get('brand_color', '#0e8ceb');
+        
+        // Convert hex to rgb for tailwind shadows
+        list($r, $g, $b) = sscanf($brandColor, "#%02x%02x%02x");
+        $brandColorRgb = "$r, $g, $b";
     @endphp
     <style>
         :root {
             --brand-color: {{ $brandColor }};
+            --brand-color-rgb: {{ $brandColorRgb }};
             --brand-color-hover: {{ $brandColor }}dd;
         }
-        .bg-brand-600 { background-color: var(--brand-color) !important; }
-        .hover\:bg-brand-700:hover { background-color: var(--brand-color-hover) !important; }
-        .text-brand-600 { color: var(--brand-color) !important; }
-        .border-brand-500 { border-color: var(--brand-color) !important; }
-        .focus\:border-brand-500:focus { border-color: var(--brand-color) !important; }
-        .focus\:ring-brand-500:focus { --tw-ring-color: var(--brand-color) !important; }
-        .from-brand-500 { --tw-gradient-from: var(--brand-color) !important; --tw-gradient-to: var(--brand-color)00 !important; --tw-gradient-stops: var(--tw-gradient-from), var(--tw-gradient-to) !important; }
-        .to-brand-700 { --tw-gradient-to: var(--brand-color-hover) !important; }
+        body { font-family: 'Plus Jakarta Sans', sans-serif; }
+        .mesh-gradient {
+            background-color: #f8fafc;
+            background-image: 
+                radial-gradient(at 0% 0%, rgba(14, 140, 235, 0.05) 0px, transparent 50%),
+                radial-gradient(at 100% 0%, rgba(99, 102, 241, 0.05) 0px, transparent 50%),
+                radial-gradient(at 100% 100%, rgba(14, 140, 235, 0.05) 0px, transparent 50%),
+                radial-gradient(at 0% 100%, rgba(99, 102, 241, 0.05) 0px, transparent 50%);
+        }
     </style>
 
     <!-- Scripts & Styles -->
     @vite(['resources/css/app.css', 'resources/js/app.js'])
     @livewireStyles
 </head>
-<body class="bg-gray-50 dark:bg-slate-900 h-full font-sans antialiased">
-    {{ $slot }}
+<body class="mesh-gradient min-h-screen antialiased flex flex-col justify-center py-12 sm:px-6 lg:px-8">
+    <div class="mt-8 sm:mx-auto sm:w-full sm:max-w-md animate-in">
+        {{ $slot }}
+    </div>
     @livewireScripts
 </body>
 </html>

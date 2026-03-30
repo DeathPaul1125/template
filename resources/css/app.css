@@ -6,28 +6,38 @@
 
 @layer base {
     :root {
-        --brand-color: #8b5cf6;
-        --brand-color-rgb: 139, 92, 246;
+        --brand-color: #0e8ceb;
+        --brand-color-rgb: 14, 140, 235;
     }
 
     body {
-        @apply font-sans;
+        font-family: 'Plus Jakarta Sans', sans-serif;
+        @apply bg-slate-50 text-slate-900 antialiased;
     }
 }
 
 @layer components {
-    /* Glassmorphism Classes */
-    .glass {
-        @apply bg-white/70 dark:bg-slate-900/70 backdrop-blur-xl border border-white/20 dark:border-slate-800/20 shadow-glass;
+    /* Glassmorphism Elite 2.0 */
+    .bg-glass {
+        @apply bg-white/70 backdrop-blur-xl border border-white/40 shadow-xl;
     }
 
-    .glass-dark {
-        @apply bg-slate-900/60 backdrop-blur-xl border border-white/10 shadow-glass;
+    .dark .bg-glass {
+        @apply bg-slate-900/60 backdrop-blur-xl border border-white/5 shadow-2xl;
     }
 
-    /* Sidebar Links */
+    /* Premium Glow Shadows */
+    .glow-shadow {
+        box-shadow: 0 0 20px -5px rgba(var(--brand-color-rgb), 0.3);
+    }
+
+    .glow-shadow-lg {
+        box-shadow: 0 0 35px -5px rgba(var(--brand-color-rgb), 0.5);
+    }
+
+    /* Sidebar Links Refinement */
     .sidebar-link {
-        @apply flex items-center gap-x-3.5 py-2.5 px-3 text-sm rounded-xl transition-all duration-300;
+        @apply flex items-center gap-x-3.5 py-2 px-3 rounded-xl text-sm font-semibold transition-all duration-200;
         @apply text-white/70 hover:bg-white/10 hover:text-white;
     }
 
