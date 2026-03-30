@@ -715,7 +715,13 @@ class CrudGeneratorController extends Controller
         $out .= "    $('#dt-{$modelVar}').DataTable({\n";
         $out .= "        processing: true,\n        serverSide: true,\n";
         $out .= "        ajax: '{$dataRoute}',\n";
-        $out .= "        language: { url: '//cdn.datatables.net/plug-ins/2.1.8/i18n/es-ES.json' },\n";
+        $out .= "        language: { url: 'https://cdn.datatables.net/plug-ins/2.1.8/i18n/es-ES.json' },\n";
+        $out .= "        dom: '<\"flex flex-wrap items-center justify-between gap-2 mb-3\"lB>frtip',\n";
+        $out .= "        buttons: [\n";
+        $out .= "            { extend: 'excelHtml5', text: 'Excel', className: 'dt-btn-excel' },\n";
+        $out .= "            { extend: 'pdfHtml5',   text: 'PDF',   className: 'dt-btn-pdf', orientation: 'landscape', pageSize: 'A4' },\n";
+        $out .= "            { extend: 'print',      text: 'Imprimir', className: 'dt-btn-print' },\n";
+        $out .= "        ],\n";
         $out .= "        columns: [\n";
         $out .= "            { data: 'id', className: 'px-4 py-3 text-sm font-mono text-slate-400' },\n";
         $out .= $dtCols . ",\n";

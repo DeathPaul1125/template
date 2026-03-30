@@ -48,6 +48,15 @@
 
     <!-- DataTables CSS -->
     <link rel="stylesheet" href="https://cdn.datatables.net/2.1.8/css/dataTables.tailwindcss.min.css">
+    <style>
+        /* DataTables Buttons custom styles */
+        .dt-buttons { display:inline-flex; gap:.375rem; }
+        .dt-buttons .dt-button { display:inline-flex; align-items:center; padding:.3rem .75rem; font-size:.75rem; font-weight:600; border-radius:.5rem; border:none; cursor:pointer; transition:opacity .15s; }
+        .dt-buttons .dt-button:hover { opacity:.85; }
+        .dt-btn-excel  { background:#16a34a; color:#fff; }
+        .dt-btn-pdf    { background:#dc2626; color:#fff; }
+        .dt-btn-print  { background:#475569; color:#fff; }
+    </style>
 </head>
 <body class="bg-gray-50 dark:bg-slate-900 h-full font-sans antialiased">
 
@@ -298,6 +307,13 @@
 <script src="https://code.jquery.com/jquery-3.7.1.min.js" integrity="sha256-/JqT3SQfawRcv/BIHPThkBvs0OEvtFFmqPF/lYI/Cxo=" crossorigin="anonymous"></script>
 <script src="https://cdn.datatables.net/2.1.8/js/dataTables.min.js"></script>
 <script src="https://cdn.datatables.net/2.1.8/js/dataTables.tailwindcss.min.js"></script>
+<!-- DataTables Buttons -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.2.7/pdfmake.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.2.7/vfs_fonts.js"></script>
+<script src="https://cdn.datatables.net/buttons/3.1.2/js/dataTables.buttons.min.js"></script>
+<script src="https://cdn.datatables.net/buttons/3.1.2/js/buttons.html5.min.js"></script>
+<script src="https://cdn.datatables.net/buttons/3.1.2/js/buttons.print.min.js"></script>
 @stack('scripts')
 </body>
 </html>
