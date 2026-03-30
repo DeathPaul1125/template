@@ -185,6 +185,117 @@ class CrudGeneratorController extends Controller
             ->with('info', "Registro de {$model} eliminado.");
     }
 
+    public function destroyModule(string $model)
+    {
+        $meta      = $this->loadMeta($model);
+        $tableName = $meta['table_name'] ?? Str::snake(Str::plural($model));
+        $routeBase = Str::kebab(Str::plural($model));
+        $ctrlClass = "{$model}Controller";
+        $deleted   = [];
+
+        // 1. Model
+        $modelFile = app_path("Models/{$model}.php");
+        if (File::exists($modelFile)) {
+            File::delete($modelFile);
+            $deleted[] = "app/Models/{$model}.php";
+        }
+
+        // 2. Controller
+        $ctrlFile = app_path("Http/Controllers/{$ctrlClass}.php");
+        if (File::exists($ctrlFile)) {
+            File::delete($ctrlFile);
+            $deleted[] = "app/Http/Controllers/{$ctrlClass}.php";
+        }
+
+        // 3. Views folder
+        $viewDir = resource_path('views/' . $routeBase);
+        if (File::isDirectory($viewDir)) {
+            File::deleteDirectory($viewDir);
+            $deleted[] = "resources/views/{$routeBase}/";
+        }
+
+        // 4. Migration(s)
+        $migPattern = database_path('migrations');
+        foreach (File::files($migPattern) as $file) {
+            if (str_contains($file->getFilename(), "create_{$tableName}_table")) {
+                File::delete($file->getPathname());
+                $deleted[] = 'database/migrations/' . $file->getFilename();
+            }
+        }
+
+        // 5. Remove route block + use import from web.php
+        $webPath = base_path('routes/web.php');
+        $webContent = File::get($webPath);
+
+        // Remove data route line (DataTables)
+        $webContent = preg_replace(
+            "/\n\s*Route::get\(\s*'\/{$routeBase}\/data'[^\n]+\n/",
+            "\n",
+            $webContent
+        );
+        // Remove resource route line
+        $webContent = preg_replace(
+            "/\n\s*Route::resource\(\s*'{$routeBase}'[^\n]+\n/",
+            "\n",
+            $webContent
+        );
+        // Remove comment line  // ModelName
+        $webContent = preg_replace(
+            "/\n\s*\/\/ {$model}\n/",
+            "\n",
+            $webContent
+        );
+        // Remove use import
+        $webContent = str_replace(
+            "use App\\Http\\Controllers\\{$ctrlClass};\n",
+            '',
+            $webContent
+        );
+        // Collapse multiple blank lines inside the group
+        $webContent = preg_replace("/(\n\s*){3,}/", "\n\n", $webContent);
+
+        File::put($webPath, $webContent);
+        $deleted[] = "routes/web.php (rutas de {$model} eliminadas)";
+
+        // 6. Remove menu item from app.blade.php
+        $layoutPath = resource_path('views/layouts/app.blade.php');
+        $layoutContent = File::get($layoutPath);
+
+        // Remove the <!-- Model --> ... </a> block
+        $layoutContent = preg_replace(
+            '/\n\s*<!-- ' . preg_quote($model, '/') . ' -->\s*\n\s*<a[^>]+route\(\'' . preg_quote($routeBase, '/') . '\.index\'\)[^>]*>.*?<\/a>/s',
+            '',
+            $layoutContent
+        );
+
+        // If the "Módulos" heading is now followed immediately by the end marker, remove it
+        $startMarker = '{{-- @crud-menu-items-start --}}';
+        $endMarker   = '{{-- @crud-menu-items-end --}}';
+        preg_match('/' . preg_quote($startMarker, '/') . '(.*?)' . preg_quote($endMarker, '/') . '/s', $layoutContent, $m);
+        if (isset($m[1]) && !str_contains($m[1], '<a ')) {
+            // Strip the Módulos heading too
+            $layoutContent = preg_replace(
+                '/' . preg_quote($startMarker, '/') . '.*?' . preg_quote($endMarker, '/') . '/s',
+                $startMarker . "\n            " . $endMarker,
+                $layoutContent
+            );
+        }
+
+        File::put($layoutPath, $layoutContent);
+        $deleted[] = "layouts/app.blade.php (ítem de menú eliminado)";
+
+        // 7. Delete meta JSON
+        $metaPath = storage_path('app/' . self::META_DIR . '/' . $model . '.json');
+        if (File::exists($metaPath)) {
+            File::delete($metaPath);
+            $deleted[] = "storage/app/crud-generator/{$model}.json";
+        }
+
+        return redirect()->route('crud-generator.index')
+            ->with('module_deleted', $model)
+            ->with('module_deleted_files', $deleted);
+    }
+
     // ─── Generators ──────────────────────────────────────────────────────────
 
     private function makeModel(string $name, array $fields, bool $timestamps, bool $softDeletes): string
@@ -304,14 +415,20 @@ class CrudGeneratorController extends Controller
             // data()
             $out .= "\n    public function data()\n    {\n";
             $out .= "        \$query = {$model}::query();\n\n";
+            $out .= "        \$editSvg   = '<svg class=\"w-4 h-4\" fill=\"none\" stroke=\"currentColor\" viewBox=\"0 0 24 24\"><path stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-width=\"2\" d=\"M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z\"/></svg>';\n";
+            $out .= "        \$trashSvg  = '<svg class=\"w-4 h-4\" fill=\"none\" stroke=\"currentColor\" viewBox=\"0 0 24 24\"><path stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-width=\"2\" d=\"M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16\"/></svg>';\n\n";
             $out .= "        return DataTables::of(\$query)\n";
-            $out .= "            ->addColumn('actions', function (\${$modelVar}) {\n";
+            $out .= "            ->addColumn('actions', function (\${$modelVar}) use (\$editSvg, \$trashSvg) {\n";
             $out .= "                \$edit = route('{$routePrefix}.edit', \${$modelVar});\n";
             $out .= "                \$del  = route('{$routePrefix}.destroy', \${$modelVar});\n";
-            $out .= "                return '<a href=\"' . \$edit . '\" class=\"p-1 text-brand-600 hover:underline text-xs\">Editar</a>'\n";
-            $out .= "                     . '<form action=\"' . \$del . '\" method=\"POST\" style=\"display:inline\" onsubmit=\"return confirm(\\'¿Eliminar?\\')\">'";
-            $out .= " . csrf_field() . method_field('DELETE')\n";
-            $out .= "                     . '<button type=\"submit\" class=\"p-1 text-red-500 hover:underline text-xs ml-2\">Eliminar</button></form>';\n";
+            $out .= "                \$csrf = csrf_field();\n";
+            $out .= "                \$html  = '<div class=\"inline-flex items-center justify-end gap-x-1\">';\n";
+            $out .= "                \$html .= '<a href=\"' . \$edit . '\" class=\"p-1.5 text-slate-400 hover:text-brand-600 hover:bg-brand-50 rounded-lg transition-all\" title=\"Editar\">' . \$editSvg . '</a>';\n";
+            $out .= "                \$html .= '<form action=\"' . \$del . '\" method=\"POST\" style=\"display:inline\" onsubmit=\"return confirm(\\'¿Eliminar este registro?\\')\">'\n";
+            $out .= "                       . \$csrf . method_field('DELETE')\n";
+            $out .= "                       . '<button type=\"submit\" class=\"p-1.5 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-all\" title=\"Eliminar\">' . \$trashSvg . '</button></form>';\n";
+            $out .= "                \$html .= '</div>';\n";
+            $out .= "                return \$html;\n";
             $out .= "            })\n";
             $out .= "            ->rawColumns(['actions'])\n";
             $out .= "            ->make(true);\n    }\n";
@@ -366,56 +483,81 @@ class CrudGeneratorController extends Controller
         }
 
         $ths = collect($fields)->map(
-            fn($f) => "                            <th class=\"px-6 py-3.5 text-start text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400\">"
+            fn($f) => "                            <th class=\"px-5 py-3 text-left text-[11px] font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500\">"
                     . Str::headline($f['name']) . "</th>"
         )->implode("\n");
 
-        $tds = collect($fields)->map(
-            fn($f) => "                            <td class=\"px-6 py-4 text-sm text-slate-700 dark:text-slate-300\">{{ \${$modelVar}->{$f['name']} }}</td>"
-        )->implode("\n");
+        $tds = collect($fields)->map(function ($f) use ($modelVar) {
+            $val = "{{ ${$modelVar}->{$f['name']} }}";
+            if ($f['type'] === 'boolean') {
+                return "                            <td class=\"px-5 py-3.5\">\n"
+                    . "                                <span class=\"inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold {{ ${$modelVar}->{$f['name']} ? 'bg-emerald-100 text-emerald-700' : 'bg-slate-100 text-slate-500' }}\">\n"
+                    . "                                    {{ ${$modelVar}->{$f['name']} ? 'S\u00ed' : 'No' }}\n"
+                    . "                                </span>\n"
+                    . "                            </td>";
+            }
+            return "                            <td class=\"px-5 py-3.5 text-sm text-slate-700 dark:text-slate-300 max-w-[200px] truncate\">{$val}</td>";
+        })->implode("\n");
 
-        $colCount = count($fields) + 1;
+        $colCount = count($fields) + 2;
 
         $out  = "<x-app-layout>\n    <x-slot name=\"header\">{$titlePlural}</x-slot>\n\n";
-        $out .= "    <div class=\"space-y-5\">\n";
+        $out .= "    <div class=\"space-y-5\">\n\n";
+        $out .= "        @if(session('success'))\n";
+        $out .= "        <div class=\"flex items-center gap-x-2 bg-emerald-50 dark:bg-emerald-900/20 border border-emerald-200 dark:border-emerald-800 rounded-xl px-4 py-3\">\n";
+        $out .= "            <svg class=\"w-4 h-4 text-emerald-500 flex-shrink-0\" fill=\"currentColor\" viewBox=\"0 0 20 20\"><path fill-rule=\"evenodd\" d=\"M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z\" clip-rule=\"evenodd\"/></svg>\n";
+        $out .= "            <p class=\"text-sm text-emerald-700 dark:text-emerald-300\">{{ session('success') }}</p>\n";
+        $out .= "        </div>\n        @endif\n\n";
         $out .= "        <div class=\"flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3\">\n";
         $out .= "            <div>\n";
         $out .= "                <h1 class=\"text-xl font-bold text-slate-800 dark:text-white\">{$titlePlural}</h1>\n";
-        $out .= "                <p class=\"text-sm text-slate-500 dark:text-slate-400\">Lista de {$titlePlural}.</p>\n";
+        $out .= "                <p class=\"text-sm text-slate-500 dark:text-slate-400 mt-0.5\">Gestiona los registros de {$titlePlural}.</p>\n";
         $out .= "            </div>\n";
         $out .= "            <a href=\"{{ route('{$routePrefix}.create') }}\"\n";
-        $out .= "               class=\"inline-flex items-center gap-x-2 px-4 py-2.5 bg-brand-600 hover:bg-brand-700 text-white text-sm font-semibold rounded-xl transition-all shadow-sm shadow-brand-500/20\">\n";
+        $out .= "               class=\"inline-flex items-center gap-x-2 px-4 py-2.5 bg-brand-600 hover:bg-brand-700 text-white text-sm font-semibold rounded-xl transition-all shadow-sm\">\n";
         $out .= "                <svg class=\"w-4 h-4\" fill=\"none\" stroke=\"currentColor\" viewBox=\"0 0 24 24\"><path stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-width=\"2\" d=\"M12 4v16m8-8H4\"/></svg>\n";
         $out .= "                Nuevo {$model}\n            </a>\n        </div>\n\n";
-        $out .= "        <div class=\"bg-white dark:bg-slate-800 border border-gray-200 dark:border-slate-700 rounded-2xl shadow-sm overflow-hidden\">\n";
+        $out .= "        <div class=\"bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl shadow-sm overflow-hidden\">\n";
         $out .= "            <div class=\"overflow-x-auto\">\n";
-        $out .= "                <table class=\"min-w-full divide-y divide-gray-200 dark:divide-slate-700\">\n";
-        $out .= "                    <thead class=\"bg-gray-50 dark:bg-slate-700/50\">\n                        <tr>\n";
+        $out .= "                <table class=\"min-w-full\">\n";
+        $out .= "                    <thead>\n";
+        $out .= "                        <tr class=\"border-b border-slate-100 dark:border-slate-800 bg-slate-50 dark:bg-slate-800/50\">\n";
+        $out .= "                            <th class=\"px-5 py-3 text-left text-[11px] font-bold uppercase tracking-wider text-slate-400\">#</th>\n";
         $out .= $ths . "\n";
-        $out .= "                            <th class=\"px-6 py-3.5 text-end text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400\">Acciones</th>\n";
+        $out .= "                            <th class=\"px-5 py-3 text-right text-[11px] font-bold uppercase tracking-wider text-slate-400\">Acciones</th>\n";
         $out .= "                        </tr>\n                    </thead>\n";
-        $out .= "                    <tbody class=\"divide-y divide-gray-100 dark:divide-slate-700\">\n";
-        $out .= "                        @forelse(\${$modelVarPlural} as \${$modelVar})\n";
-        $out .= "                        <tr class=\"hover:bg-gray-50 dark:hover:bg-slate-700/30 transition-colors\">\n";
+        $out .= "                    <tbody class=\"divide-y divide-slate-100 dark:divide-slate-800\">\n";
+        $out .= "                        @forelse(${$modelVarPlural} as ${$modelVar})\n";
+        $out .= "                        <tr class=\"hover:bg-slate-50/60 dark:hover:bg-slate-800/40 transition-colors group\">\n";
+        $out .= "                            <td class=\"px-5 py-3.5 text-sm font-mono text-slate-400\">{{ ${$modelVar}->id }}</td>\n";
         $out .= $tds . "\n";
-        $out .= "                            <td class=\"px-6 py-4 text-end\">\n";
-        $out .= "                                <div class=\"inline-flex items-center gap-x-1\">\n";
-        $out .= "                                    <a href=\"{{ route('{$routePrefix}.edit', \${$modelVar}) }}\" class=\"p-2 text-slate-500 hover:text-brand-600 hover:bg-brand-50 dark:hover:bg-brand-900/20 rounded-lg transition-all\" title=\"Editar\">\n";
+        $out .= "                            <td class=\"px-5 py-3.5 text-right\">\n";
+        $out .= "                                <div class=\"inline-flex items-center gap-x-1 opacity-0 group-hover:opacity-100 transition-opacity\">\n";
+        $out .= "                                    <a href=\"{{ route('{$routePrefix}.edit', ${$modelVar}) }}\"\n";
+        $out .= "                                       class=\"p-1.5 text-slate-400 hover:text-brand-600 hover:bg-brand-50 dark:hover:bg-brand-900/20 rounded-lg transition-all\" title=\"Editar\">\n";
         $out .= "                                        <svg class=\"w-4 h-4\" fill=\"none\" stroke=\"currentColor\" viewBox=\"0 0 24 24\"><path stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-width=\"2\" d=\"M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z\"/></svg>\n";
         $out .= "                                    </a>\n";
-        $out .= "                                    <form action=\"{{ route('{$routePrefix}.destroy', \${$modelVar}) }}\" method=\"POST\" onsubmit=\"return confirm('¿Eliminar este registro?')\">\n";
+        $out .= "                                    <form action=\"{{ route('{$routePrefix}.destroy', ${$modelVar}) }}\" method=\"POST\"\n";
+        $out .= "                                          onsubmit=\"return confirm('\u00bfEliminar este registro?')\">\n";
         $out .= "                                        @csrf @method('DELETE')\n";
-        $out .= "                                        <button type=\"submit\" class=\"p-2 text-slate-500 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-all\" title=\"Eliminar\">\n";
+        $out .= "                                        <button type=\"submit\" class=\"p-1.5 text-slate-400 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-all\" title=\"Eliminar\">\n";
         $out .= "                                            <svg class=\"w-4 h-4\" fill=\"none\" stroke=\"currentColor\" viewBox=\"0 0 24 24\"><path stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-width=\"2\" d=\"M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16\"/></svg>\n";
         $out .= "                                        </button>\n                                    </form>\n";
         $out .= "                                </div>\n                            </td>\n";
         $out .= "                        </tr>\n";
         $out .= "                        @empty\n";
-        $out .= "                        <tr><td colspan=\"{$colCount}\" class=\"px-6 py-12 text-center text-sm text-slate-500\">No hay registros.</td></tr>\n";
+        $out .= "                        <tr><td colspan=\"{$colCount}\" class=\"px-5 py-16 text-center\">\n";
+        $out .= "                            <div class=\"flex flex-col items-center gap-y-2\">\n";
+        $out .= "                                <svg class=\"w-10 h-10 text-slate-200 dark:text-slate-700\" fill=\"none\" stroke=\"currentColor\" viewBox=\"0 0 24 24\"><path stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-width=\"1.5\" d=\"M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2\"/></svg>\n";
+        $out .= "                                <p class=\"text-sm text-slate-400\">No hay registros a\u00fan.</p>\n";
+        $out .= "                                <a href=\"{{ route('{$routePrefix}.create') }}\" class=\"text-xs text-brand-600 hover:underline font-medium\">Crear el primero</a>\n";
+        $out .= "                            </div>\n        </td></tr>\n";
         $out .= "                        @endforelse\n                    </tbody>\n                </table>\n            </div>\n";
-        $out .= "            @if(\${$modelVarPlural}->hasPages())\n";
-        $out .= "            <div class=\"px-6 py-4 border-t border-gray-200 dark:border-slate-700\">{{ \${$modelVarPlural}->links() }}</div>\n";
-        $out .= "            @endif\n        </div>\n    </div>\n</x-app-layout>\n";
+        $out .= "            @if(${$modelVarPlural}->hasPages())\n";
+        $out .= "            <div class=\"px-5 py-3.5 border-t border-slate-100 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-800/30\">\n";
+        $out .= "                {{ ${$modelVarPlural}->links() }}\n";
+        $out .= "            </div>\n            @endif\n";
+        $out .= "        </div>\n    </div>\n</x-app-layout>\n";
 
         return $out;
     }
@@ -423,67 +565,85 @@ class CrudGeneratorController extends Controller
     private function makeIndexViewDT(string $model, string $modelVar, string $routePrefix, string $titlePlural, array $fields): string
     {
         $ths = collect($fields)->map(
-            fn($f) => "                        <th>" . Str::headline($f['name']) . "</th>"
+            fn($f) => "                        <th class=\"px-4 py-3 text-left text-[11px] font-bold uppercase tracking-wider text-slate-400\">"
+                    . Str::headline($f['name']) . "</th>"
         )->implode("\n");
 
         $dtCols = collect($fields)->map(
-            fn($f) => "                    { data: '{$f['name']}' }"
+            fn($f) => "                    { data: '{$f['name']}', className: 'px-4 py-3 text-sm text-slate-700' }"
         )->implode(",\n");
 
         $dataRoute   = "{{ route('{$routePrefix}.data') }}";
         $createRoute = "{{ route('{$routePrefix}.create') }}";
 
         $out  = "<x-app-layout>\n    <x-slot name=\"header\">{$titlePlural}</x-slot>\n\n";
-        $out .= "    <div class=\"space-y-5\">\n";
+        $out .= "    <div class=\"space-y-5\">\n\n";
+        $out .= "        @if(session('success'))\n";
+        $out .= "        <div class=\"flex items-center gap-x-2 bg-emerald-50 dark:bg-emerald-900/20 border border-emerald-200 dark:border-emerald-800 rounded-xl px-4 py-3\">\n";
+        $out .= "            <svg class=\"w-4 h-4 text-emerald-500 flex-shrink-0\" fill=\"currentColor\" viewBox=\"0 0 20 20\"><path fill-rule=\"evenodd\" d=\"M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z\" clip-rule=\"evenodd\"/></svg>\n";
+        $out .= "            <p class=\"text-sm text-emerald-700 dark:text-emerald-300\">{{ session('success') }}</p>\n";
+        $out .= "        </div>\n        @endif\n\n";
         $out .= "        <div class=\"flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3\">\n";
         $out .= "            <div>\n";
         $out .= "                <h1 class=\"text-xl font-bold text-slate-800 dark:text-white\">{$titlePlural}</h1>\n";
-        $out .= "                <p class=\"text-sm text-slate-500 dark:text-slate-400\">Lista de {$titlePlural}.</p>\n";
+        $out .= "                <p class=\"text-sm text-slate-500 dark:text-slate-400 mt-0.5\">Gestiona los registros de {$titlePlural}.</p>\n";
         $out .= "            </div>\n";
         $out .= "            <a href=\"{$createRoute}\"\n";
-        $out .= "               class=\"inline-flex items-center gap-x-2 px-4 py-2.5 bg-brand-600 hover:bg-brand-700 text-white text-sm font-semibold rounded-xl transition-all shadow-sm shadow-brand-500/20\">\n";
+        $out .= "               class=\"inline-flex items-center gap-x-2 px-4 py-2.5 bg-brand-600 hover:bg-brand-700 text-white text-sm font-semibold rounded-xl transition-all shadow-sm\">\n";
         $out .= "                <svg class=\"w-4 h-4\" fill=\"none\" stroke=\"currentColor\" viewBox=\"0 0 24 24\"><path stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-width=\"2\" d=\"M12 4v16m8-8H4\"/></svg>\n";
         $out .= "                Nuevo {$model}\n            </a>\n        </div>\n\n";
-        $out .= "        <div class=\"bg-white dark:bg-slate-800 border border-gray-200 dark:border-slate-700 rounded-2xl shadow-sm overflow-hidden p-4\">\n";
+        $out .= "        <div class=\"bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl shadow-sm overflow-hidden\">\n";
+        $out .= "            <div class=\"p-4\">\n";
         $out .= "            <table id=\"dt-{$modelVar}\" class=\"min-w-full\" style=\"width:100%\">\n";
-        $out .= "                <thead>\n                    <tr>\n";
+        $out .= "                <thead>\n";
+        $out .= "                    <tr class=\"border-b border-slate-100 dark:border-slate-800 bg-slate-50 dark:bg-slate-800/50\">\n";
+        $out .= "                        <th class=\"px-4 py-3 text-left text-[11px] font-bold uppercase tracking-wider text-slate-400\">#</th>\n";
         $out .= $ths . "\n";
-        $out .= "                        <th>Acciones</th>\n";
-        $out .= "                    </tr>\n                </thead>\n            </table>\n        </div>\n    </div>\n\n";
+        $out .= "                        <th class=\"px-4 py-3 text-right text-[11px] font-bold uppercase tracking-wider text-slate-400\">Acciones</th>\n";
+        $out .= "                    </tr>\n                </thead>\n            </table>\n            </div>\n        </div>\n    </div>\n\n";
         $out .= "@push('scripts')\n<script>\n$(function () {\n";
-        $out .= "    \$('#dt-{$modelVar}').DataTable({\n";
+        $out .= "    $('#dt-{$modelVar}').DataTable({\n";
         $out .= "        processing: true,\n        serverSide: true,\n";
         $out .= "        ajax: '{$dataRoute}',\n";
         $out .= "        language: { url: '//cdn.datatables.net/plug-ins/2.1.8/i18n/es-ES.json' },\n";
         $out .= "        columns: [\n";
+        $out .= "            { data: 'id', className: 'px-4 py-3 text-sm font-mono text-slate-400' },\n";
         $out .= $dtCols . ",\n";
-        $out .= "            { data: 'actions', orderable: false, searchable: false }\n";
+        $out .= "            { data: 'actions', orderable: false, searchable: false, className: 'px-4 py-3 text-right' }\n";
         $out .= "        ]\n    });\n});\n</script>\n@endpush\n";
         $out .= "</x-app-layout>\n";
 
         return $out;
     }
-
     private function makeCreateView(string $model, array $fields): string
     {
-        $routePrefix = Str::kebab(Str::plural($model));
+        $routePrefix   = Str::kebab(Str::plural($model));
+        $titleSingular = Str::headline($model);
 
         $formFields = collect($fields)->map(fn($f) => $this->makeFormField($f, null))->implode("\n\n");
 
         $out  = "<x-app-layout>\n";
-        $out .= "    <x-slot name=\"header\">Nuevo {$model}</x-slot>\n\n";
-        $out .= "    <div class=\"max-w-2xl mx-auto\">\n";
-        $out .= "        <div class=\"mb-5\">\n";
-        $out .= "            <h1 class=\"text-xl font-bold text-slate-800 dark:text-white\">Crear {$model}</h1>\n";
-        $out .= "            <p class=\"text-sm text-slate-500\">Completa el formulario para agregar un nuevo registro.</p>\n";
-        $out .= "        </div>\n\n";
-        $out .= "        <div class=\"bg-white dark:bg-slate-800 border border-gray-200 dark:border-slate-700 rounded-2xl shadow-sm p-6\">\n";
-        $out .= "            <form action=\"{{ route('{$routePrefix}.store') }}\" method=\"POST\" class=\"space-y-5\">\n";
+        $out .= "    <x-slot name=\"header\">Nuevo {$titleSingular}</x-slot>\n\n";
+        $out .= "    <div class=\"max-w-2xl mx-auto space-y-4\">\n\n";
+        $out .= "        {{-- Breadcrumb --}}\n";
+        $out .= "        <nav class=\"flex items-center gap-x-1.5 text-xs text-slate-400\">\n";
+        $out .= "            <a href=\"{{ route('{$routePrefix}.index') }}\" class=\"hover:text-brand-600 transition-colors\">" . Str::headline(Str::plural($model)) . "</a>\n";
+        $out .= "            <svg class=\"w-3 h-3\" fill=\"none\" stroke=\"currentColor\" viewBox=\"0 0 24 24\"><path stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-width=\"2\" d=\"M9 5l7 7-7 7\"/></svg>\n";
+        $out .= "            <span class=\"text-slate-600 dark:text-slate-300 font-medium\">Nuevo</span>\n";
+        $out .= "        </nav>\n\n";
+        $out .= "        <div class=\"bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl shadow-sm\">\n";
+        $out .= "            <div class=\"px-6 py-4 border-b border-slate-100 dark:border-slate-800\">\n";
+        $out .= "                <h1 class=\"text-base font-semibold text-slate-800 dark:text-white\">Crear {$titleSingular}</h1>\n";
+        $out .= "                <p class=\"text-xs text-slate-400 mt-0.5\">Completa el formulario para agregar un nuevo registro.</p>\n";
+        $out .= "            </div>\n";
+        $out .= "            <form action=\"{{ route('{$routePrefix}.store') }}\" method=\"POST\" class=\"p-6 space-y-5\">\n";
         $out .= "                @csrf\n\n";
         $out .= $formFields . "\n\n";
-        $out .= "                <div class=\"flex items-center justify-end gap-x-3 pt-2\">\n";
-        $out .= "                    <a href=\"{{ route('{$routePrefix}.index') }}\" class=\"py-2.5 px-4 inline-flex items-center gap-x-2 text-sm font-medium rounded-xl border border-gray-200 text-slate-700 hover:bg-gray-50 dark:border-slate-700 dark:text-slate-300 dark:hover:bg-slate-700 transition-all\">Cancelar</a>\n";
-        $out .= "                    <button type=\"submit\" class=\"py-2.5 px-5 inline-flex items-center gap-x-2 text-sm font-semibold rounded-xl bg-brand-600 hover:bg-brand-700 text-white transition-all shadow-sm shadow-brand-500/20\">\n";
+        $out .= "                <div class=\"flex items-center justify-end gap-x-3 pt-3 border-t border-slate-100 dark:border-slate-800\">\n";
+        $out .= "                    <a href=\"{{ route('{$routePrefix}.index') }}\"\n";
+        $out .= "                       class=\"px-4 py-2.5 text-sm font-medium text-slate-600 dark:text-slate-400 hover:text-slate-800 dark:hover:text-white transition-colors\">Cancelar</a>\n";
+        $out .= "                    <button type=\"submit\"\n";
+        $out .= "                            class=\"inline-flex items-center gap-x-2 px-5 py-2.5 text-sm font-semibold bg-brand-600 hover:bg-brand-700 text-white rounded-xl transition-all shadow-sm\">\n";
         $out .= "                        <svg class=\"w-4 h-4\" fill=\"none\" stroke=\"currentColor\" viewBox=\"0 0 24 24\"><path stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-width=\"2\" d=\"M5 13l4 4L19 7\"/></svg>\n";
         $out .= "                        Guardar\n                    </button>\n                </div>\n";
         $out .= "            </form>\n        </div>\n    </div>\n</x-app-layout>\n";
@@ -493,27 +653,44 @@ class CrudGeneratorController extends Controller
 
     private function makeEditView(string $model, array $fields): string
     {
-        $routePrefix = Str::kebab(Str::plural($model));
-        $modelVar    = Str::camel($model);
+        $routePrefix   = Str::kebab(Str::plural($model));
+        $modelVar      = Str::camel($model);
+        $titleSingular = Str::headline($model);
 
         $formFields = collect($fields)->map(fn($f) => $this->makeFormField($f, $modelVar))->implode("\n\n");
 
         $out  = "<x-app-layout>\n";
-        $out .= "    <x-slot name=\"header\">Editar {$model}</x-slot>\n\n";
-        $out .= "    <div class=\"max-w-2xl mx-auto\">\n";
-        $out .= "        <div class=\"mb-5\">\n";
-        $out .= "            <h1 class=\"text-xl font-bold text-slate-800 dark:text-white\">Editar {$model}</h1>\n";
-        $out .= "        </div>\n\n";
-        $out .= "        <div class=\"bg-white dark:bg-slate-800 border border-gray-200 dark:border-slate-700 rounded-2xl shadow-sm p-6\">\n";
-        $out .= "            <form action=\"{{ route('{$routePrefix}.update', \${$modelVar}) }}\" method=\"POST\" class=\"space-y-5\">\n";
+        $out .= "    <x-slot name=\"header\">Editar {$titleSingular}</x-slot>\n\n";
+        $out .= "    <div class=\"max-w-2xl mx-auto space-y-4\">\n\n";
+        $out .= "        {{-- Breadcrumb --}}\n";
+        $out .= "        <nav class=\"flex items-center gap-x-1.5 text-xs text-slate-400\">\n";
+        $out .= "            <a href=\"{{ route('{$routePrefix}.index') }}\" class=\"hover:text-brand-600 transition-colors\">" . Str::headline(Str::plural($model)) . "</a>\n";
+        $out .= "            <svg class=\"w-3 h-3\" fill=\"none\" stroke=\"currentColor\" viewBox=\"0 0 24 24\"><path stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-width=\"2\" d=\"M9 5l7 7-7 7\"/></svg>\n";
+        $out .= "            <span class=\"text-slate-600 dark:text-slate-300 font-medium\">Editar #{{ \${$modelVar}->id }}</span>\n";
+        $out .= "        </nav>\n\n";
+        $out .= "        <div class=\"bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl shadow-sm\">\n";
+        $out .= "            <div class=\"px-6 py-4 border-b border-slate-100 dark:border-slate-800\">\n";
+        $out .= "                <h1 class=\"text-base font-semibold text-slate-800 dark:text-white\">Editar {$titleSingular}</h1>\n";
+        $out .= "                <p class=\"text-xs text-slate-400 mt-0.5\">Modifica los datos del registro.</p>\n";
+        $out .= "            </div>\n";
+        $out .= "            <form action=\"{{ route('{$routePrefix}.update', \${$modelVar}) }}\" method=\"POST\" class=\"p-6 space-y-5\">\n";
         $out .= "                @csrf\n                @method('PUT')\n\n";
         $out .= $formFields . "\n\n";
-        $out .= "                <div class=\"flex items-center justify-end gap-x-3 pt-2\">\n";
-        $out .= "                    <a href=\"{{ route('{$routePrefix}.index') }}\" class=\"py-2.5 px-4 inline-flex items-center gap-x-2 text-sm font-medium rounded-xl border border-gray-200 text-slate-700 hover:bg-gray-50 dark:border-slate-700 dark:text-slate-300 dark:hover:bg-slate-700 transition-all\">Cancelar</a>\n";
-        $out .= "                    <button type=\"submit\" class=\"py-2.5 px-5 inline-flex items-center gap-x-2 text-sm font-semibold rounded-xl bg-brand-600 hover:bg-brand-700 text-white transition-all shadow-sm shadow-brand-500/20\">\n";
-        $out .= "                        <svg class=\"w-4 h-4\" fill=\"none\" stroke=\"currentColor\" viewBox=\"0 0 24 24\"><path stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-width=\"2\" d=\"M5 13l4 4L19 7\"/></svg>\n";
-        $out .= "                        Actualizar\n                    </button>\n                </div>\n";
-        $out .= "            </form>\n        </div>\n    </div>\n</x-app-layout>\n";
+        $out .= "                <div class=\"flex items-center justify-between pt-3 border-t border-slate-100 dark:border-slate-800\">\n";
+        $out .= "                    <form action=\"{{ route('{$routePrefix}.destroy', \${$modelVar}) }}\" method=\"POST\"\n";
+        $out .= "                          onsubmit=\"return confirm('¿Eliminar este registro? Esta acción no se puede deshacer.')\">\n";
+        $out .= "                        @csrf @method('DELETE')\n";
+        $out .= "                        <button type=\"submit\" class=\"inline-flex items-center gap-x-1.5 px-4 py-2.5 text-sm font-medium text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-xl transition-all\">\n";
+        $out .= "                            <svg class=\"w-4 h-4\" fill=\"none\" stroke=\"currentColor\" viewBox=\"0 0 24 24\"><path stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-width=\"2\" d=\"M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16\"/></svg>\n";
+        $out .= "                            Eliminar\n                        </button>\n                    </form>\n";
+        $out .= "                    <div class=\"flex items-center gap-x-3\">\n";
+        $out .= "                        <a href=\"{{ route('{$routePrefix}.index') }}\"\n";
+        $out .= "                           class=\"px-4 py-2.5 text-sm font-medium text-slate-600 dark:text-slate-400 hover:text-slate-800 dark:hover:text-white transition-colors\">Cancelar</a>\n";
+        $out .= "                        <button type=\"submit\"\n";
+        $out .= "                                class=\"inline-flex items-center gap-x-2 px-5 py-2.5 text-sm font-semibold bg-brand-600 hover:bg-brand-700 text-white rounded-xl transition-all shadow-sm\">\n";
+        $out .= "                            <svg class=\"w-4 h-4\" fill=\"none\" stroke=\"currentColor\" viewBox=\"0 0 24 24\"><path stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-width=\"2\" d=\"M5 13l4 4L19 7\"/></svg>\n";
+        $out .= "                            Actualizar\n                        </button>\n                    </div>\n";
+        $out .= "                </div>\n            </form>\n        </div>\n    </div>\n</x-app-layout>\n";
 
         return $out;
     }

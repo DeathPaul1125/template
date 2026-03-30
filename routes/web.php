@@ -3,6 +3,7 @@
 use App\Http\Controllers\RoleController;
 use App\Http\Controllers\UserController;
 use App\Http\Controllers\InstallerController;
+use App\Http\Controllers\ProductController;
 use Illuminate\Support\Facades\Route;
 
 // Rutas del instalador (Wizard)
@@ -30,9 +31,9 @@ Route::middleware([
     'verified',
 ])->group(function () {
 
-    Route::get('/dashboard', function () {
-        return view('dashboard');
-    })->name('dashboard');
+    Route::get('/dashboard', [\App\Http\Controllers\DashboardController::class, 'index'])->name('dashboard');
+    Route::post('/dashboard/save-layout', [\App\Http\Controllers\DashboardController::class, 'saveLayout'])->name('dashboard.save-layout');
+    Route::post('/dashboard/widget-data', [\App\Http\Controllers\DashboardController::class, 'widgetData'])->name('dashboard.widget-data');
 
     // Gestión de usuarios
     Route::resource('users', UserController::class)
@@ -67,9 +68,17 @@ Route::middleware([
     Route::delete('/crud-generator/{model}/meta', [\App\Http\Controllers\CrudGeneratorController::class, 'destroyMeta'])
         ->name('crud-generator.destroy-meta')
         ->middleware('role:super-admin');
+    Route::delete('/crud-generator/{model}/module', [\App\Http\Controllers\CrudGeneratorController::class, 'destroyModule'])
+        ->name('crud-generator.destroy-module')
+        ->middleware('role:super-admin');
     Route::get('/crud-generator/icons', [\App\Http\Controllers\CrudGeneratorController::class, 'icons'])
         ->name('crud-generator.icons')
         ->middleware('role:super-admin');
 
+
+
+    // Product
+    Route::get('/products/data', [ProductController::class, 'data'])->name('products.data');
+    Route::resource('products', ProductController::class)->except(['show']);
     // @crud-routes
 });

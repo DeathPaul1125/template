@@ -1,6 +1,10 @@
 <x-app-layout>
     <x-slot name="header">Generador de CRUD</x-slot>
 
+    @if(isset($meta))
+    <script>window.__crudMeta = @json($meta);</script>
+    @endif
+
     <div class="space-y-6" x-data="{
         modelName: '',
         tableName: '',
@@ -39,7 +43,7 @@
 
         init() {
             @if(isset($meta))
-            this.loadMeta(@json($meta));
+            this.loadMeta(window.__crudMeta);
             @else
             this.addField();
             @endif
@@ -170,17 +174,53 @@
                             </button>
                         </form>
 
-                        {{-- Eliminar registro --}}
-                        <form method="POST" action="{{ route('crud-generator.destroy-meta', $s['model']) }}"
-                              onsubmit="return confirm('Eliminar registro de {{ $s['model'] }} de la lista?')">
-                            @csrf @method('DELETE')
-                            <button type="submit"
-                                    class="p-1.5 text-slate-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-all" title="Eliminar registro">
+                        {{-- Eliminar (dropdown) --}}
+                        <div x-data="{ open: false }" class="relative">
+                            <button @click="open = !open" type="button"
+                                    class="p-1.5 text-slate-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-all" title="Eliminar">
                                 <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/>
                                 </svg>
                             </button>
-                        </form>
+
+                            <div x-show="open" @click.outside="open = false"
+                                 x-transition:enter="transition ease-out duration-100"
+                                 x-transition:enter-start="opacity-0 scale-95"
+                                 x-transition:enter-end="opacity-100 scale-100"
+                                 x-transition:leave="transition ease-in duration-75"
+                                 x-transition:leave-start="opacity-100 scale-100"
+                                 x-transition:leave-end="opacity-0 scale-95"
+                                 class="absolute right-0 top-full mt-1 z-20 w-56 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl shadow-lg overflow-hidden">
+
+                                {{-- Solo eliminar el registro de la lista --}}
+                                <form method="POST" action="{{ route('crud-generator.destroy-meta', $s['model']) }}"
+                                      @submit.prevent="if(confirm('Solo eliminar el registro de la lista (sin borrar archivos)?')) $el.submit()">
+                                    @csrf @method('DELETE')
+                                    <button type="submit"
+                                            class="w-full flex items-center gap-x-2.5 px-4 py-2.5 text-xs text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700/50 transition-colors text-left">
+                                        <svg class="w-3.5 h-3.5 text-slate-400 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/>
+                                        </svg>
+                                        Solo quitar del listado
+                                    </button>
+                                </form>
+
+                                <div class="border-t border-slate-100 dark:border-slate-700"></div>
+
+                                {{-- Eliminar módulo completo --}}
+                                <form method="POST" action="{{ route('crud-generator.destroy-module', $s['model']) }}"
+                                      @submit.prevent="if(confirm('¿Eliminar TODOS los archivos del módulo {{ $s['model'] }}?\n\nSe borrarán:\n• Modelo, controlador y vistas\n• Migración\n• Rutas e ítem del menú\n\nEsta acción no se puede deshacer.')) $el.submit()">
+                                    @csrf @method('DELETE')
+                                    <button type="submit"
+                                            class="w-full flex items-center gap-x-2.5 px-4 py-2.5 text-xs font-semibold text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors text-left">
+                                        <svg class="w-3.5 h-3.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/>
+                                        </svg>
+                                        Eliminar módulo completo
+                                    </button>
+                                </form>
+                            </div>
+                        </div>
                     </div>
                 </div>
                 @endforeach
@@ -195,6 +235,31 @@
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
             </svg>
             <p class="text-sm text-slate-600 dark:text-slate-300">{{ session('info') }}</p>
+        </div>
+        @endif
+
+        {{-- ── Módulo eliminado flash ── --}}
+        @if(session('module_deleted'))
+        <div class="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-2xl p-5 space-y-3">
+            <div class="flex items-center gap-x-2">
+                <svg class="w-5 h-5 text-red-500 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/>
+                </svg>
+                <p class="text-sm font-semibold text-red-700 dark:text-red-300">
+                    Módulo <strong>{{ session('module_deleted') }}</strong> eliminado correctamente.
+                </p>
+            </div>
+            @if(session('module_deleted_files'))
+            <ul class="grid sm:grid-cols-2 gap-1.5">
+                @foreach(session('module_deleted_files') as $df)
+                <li class="flex items-center gap-x-2 text-xs text-red-700 dark:text-red-300 bg-red-100 dark:bg-red-900/30 rounded-lg px-3 py-1.5 font-mono">
+                    <svg class="w-3 h-3 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clip-rule="evenodd"/></svg>
+                    {{ $df }}
+                </li>
+                @endforeach
+            </ul>
+            @endif
+            <p class="text-xs text-red-500 dark:text-red-400">Recuerda ejecutar <code class="font-mono bg-red-100 dark:bg-red-900/40 px-1 rounded">php artisan migrate:rollback</code> si necesitas revertir la migración manualmente.</p>
         </div>
         @endif
 
@@ -388,13 +453,8 @@
                 @error('fields')<p class="px-6 py-2 text-xs text-red-500 bg-red-50">{{ $message }}</p>@enderror
                 @error('fields.*.name')<p class="px-6 py-2 text-xs text-red-500 bg-red-50">Nombre de campo inválido (solo minúsculas, números y guión bajo).</p>@enderror
 
-                {{-- Campo vacío --}}
-                <div x-show="fields.length === 0" class="px-6 py-10 text-center">
-                    <p class="text-sm text-slate-400">No hay campos definidos. Haz clic en «Agregar campo».</p>
-                </div>
-
-                {{-- Tabla de campos --}}
-                <div x-show="fields.length > 0" class="overflow-x-auto">
+                {{-- Tabla de campos (id siempre visible) --}}
+                <div class="overflow-x-auto">
                     <table class="min-w-full">
                         <thead class="bg-gray-50 dark:bg-slate-700/50 border-b border-gray-100 dark:border-slate-700">
                             <tr>
@@ -407,6 +467,33 @@
                             </tr>
                         </thead>
                         <tbody class="divide-y divide-gray-100 dark:divide-slate-700">
+                            {{-- Fila ID automático (siempre presente, no eliminable) --}}
+                            <tr class="bg-slate-50/50 dark:bg-slate-800/40">
+                                <td class="px-4 py-3">
+                                    <span class="font-mono text-sm font-semibold text-slate-400 dark:text-slate-500">id</span>
+                                </td>
+                                <td class="px-4 py-3">
+                                    <span class="text-xs text-slate-400">bigInteger</span>
+                                </td>
+                                <td class="px-4 py-3">
+                                    <span class="text-xs text-slate-400">—</span>
+                                </td>
+                                <td class="px-4 py-3 text-center">
+                                    <span class="text-xs text-slate-400">—</span>
+                                </td>
+                                <td class="px-4 py-3 text-center">
+                                    <span class="text-xs text-slate-400">—</span>
+                                </td>
+                                <td class="px-4 py-3 text-center">
+                                    <span class="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold bg-brand-100 dark:bg-brand-900/30 text-brand-600 dark:text-brand-400">Auto</span>
+                                </td>
+                            </tr>
+                            {{-- Mensaje cuando no hay campos de usuario --}}
+                            <tr x-show="fields.length === 0">
+                                <td colspan="6" class="px-6 py-8 text-center text-sm text-slate-400">
+                                    No hay campos adicionales. Haz clic en «Agregar campo».
+                                </td>
+                            </tr>
                             <template x-for="(field, index) in fields" :key="index">
                                 <tr class="hover:bg-gray-50/50 dark:hover:bg-slate-700/20">
                                     {{-- Nombre --}}
