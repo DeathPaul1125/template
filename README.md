@@ -1,58 +1,66 @@
-<p align="center"><a href="https://laravel.com" target="_blank"><img src="https://raw.githubusercontent.com/laravel/art/master/logo-lockup/5%20SVG/2%20CMYK/1%20Full%20Color/laravel-logolockup-cmyk-red.svg" width="400" alt="Laravel Logo"></a></p>
+# Laravel Premium Admin Panel
 
-<p align="center">
-<a href="https://github.com/laravel/framework/actions"><img src="https://github.com/laravel/framework/workflows/tests/badge.svg" alt="Build Status"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/dt/laravel/framework" alt="Total Downloads"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/v/laravel/framework" alt="Latest Stable Version"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/l/laravel/framework" alt="License"></a>
-</p>
+Una solución administrativa de alta gama basada en Laravel, diseñada con una estética "Modern SaaS" que combina Glassmorphism, tipografía premium y configuraciones dinámicas.
 
-## About Laravel
+## 🚀 Tecnologías Core
+El proyecto utiliza lo último en el ecosistema Laravel para garantizar rendimiento, seguridad y una experiencia de usuario superior:
 
-Laravel is a web application framework with expressive, elegant syntax. We believe development must be an enjoyable and creative experience to be truly fulfilling. Laravel takes the pain out of development by easing common tasks used in many web projects, such as:
+-   **Backend**: [Laravel 13.0](https://laravel.com) / PHP 8.3
+-   **Frontend Interactivo**: [Livewire 3.6](https://livewire.laravel.com) & [Jetstream 5.5](https://jetstream.laravel.com)
+-   **Estilos**: [Tailwind CSS 3.4](https://tailwindcss.com) & [Preline UI 2.4](https://preline.co)
+-   **Bundler**: [Vite 8.0](https://vitejs.dev)
+-   **Base de Datos**: Soporte multinivel (MySQL/SQLite/PostgreSQL)
 
-- [Simple, fast routing engine](https://laravel.com/docs/routing).
-- [Powerful dependency injection container](https://laravel.com/docs/container).
-- Multiple back-ends for [session](https://laravel.com/docs/session) and [cache](https://laravel.com/docs/cache) storage.
-- Expressive, intuitive [database ORM](https://laravel.com/docs/eloquent).
-- Database agnostic [schema migrations](https://laravel.com/docs/migrations).
-- [Robust background job processing](https://laravel.com/docs/queues).
-- [Real-time event broadcasting](https://laravel.com/docs/broadcasting).
+## ✨ Características Premium
+-   **Rediseño Visual SaaS**: Estética basada en Glassmorphism con efectos de desenfoque (`backdrop-blur`), sombras "Glow" reactivas y animaciones de entrada suaves.
+-   **Tipografía de Élite**: Integración de la fuente **Plus Jakarta Sans** para una apariencia tecnológica y moderna.
+-   **Gestión de RBAC**: Control de acceso basado en roles y permisos mediante el paquete oficial de [Spatie](https://spatie.be/docs/laravel-permission).
+-   **Configuración Dinámica del Sistema**:
+    -   Personalización en tiempo real del **Color de Marca**.
+    -   Gestión de LOGO, FAVICON e Imágenes de Login desde el panel.
+    -   Inyección dinámica de variables CSS para consistencia visual.
+-   **Reportes PDF**: Generación de documentos profesionales y listados de usuarios mediante [DOMPDF](https://github.com/barryvdh/laravel-dompdf).
+-   **Modo Oscuro Permanente en Navegación**: Sidebar y Topbar optimizados para un modo oscuro elegante y de alto contraste.
 
-Laravel is accessible, powerful, and provides tools required for large, robust applications.
+## 📦 Instalación y Configuración
 
-## Learning Laravel
+1.  **Clonar el repositorio y entrar al directorio**:
+    ```bash
+    git clone [url-del-repositorio]
+    cd template
+    ```
+2.  **Instalar dependencias de PHP**:
+    ```bash
+    composer install
+    ```
+3.  **Configurar el entorno**:
+    ```bash
+    cp .env.example .env
+    php artisan key:generate
+    ```
+4.  **Ejecutar migraciones y seeders (Datos Iniciales)**:
+    ```bash
+    php artisan migrate:fresh --seed
+    ```
+5.  **Instalar y compilar assets**:
+    ```bash
+    npm install
+    npm run build
+    ```
+6.  **Enlazar almacenamiento**:
+    ```bash
+    php artisan storage:link
+    ```
 
-Laravel has the most extensive and thorough [documentation](https://laravel.com/docs) and video tutorial library of all modern web application frameworks, making it a breeze to get started with the framework.
+## 🔐 Datos de Acceso (Entorno de Desarrollo)
+Una vez ejecutados los seeders, puedes acceder con las siguientes credenciales:
 
-In addition, [Laracasts](https://laracasts.com) contains thousands of video tutorials on a range of topics including Laravel, modern PHP, unit testing, and JavaScript. Boost your skills by digging into our comprehensive video library.
+| Email | Contraseña | Rol |
+| :--- | :--- | :--- |
+| `admin@admin.com` | `password` | **Super Admin** |
+| `administrador@admin.com` | `password` | **Admin** |
+| `editor@admin.com` | `password` | **Editor** |
 
-You can also watch bite-sized lessons with real-world projects on [Laravel Learn](https://laravel.com/learn), where you will be guided through building a Laravel application from scratch while learning PHP fundamentals.
+---
 
-## Agentic Development
-
-Laravel's predictable structure and conventions make it ideal for AI coding agents like Claude Code, Cursor, and GitHub Copilot. Install [Laravel Boost](https://laravel.com/docs/ai) to supercharge your AI workflow:
-
-```bash
-composer require laravel/boost --dev
-
-php artisan boost:install
-```
-
-Boost provides your agent 15+ tools and skills that help agents build Laravel applications while following best practices.
-
-## Contributing
-
-Thank you for considering contributing to the Laravel framework! The contribution guide can be found in the [Laravel documentation](https://laravel.com/docs/contributions).
-
-## Code of Conduct
-
-In order to ensure that the Laravel community is welcoming to all, please review and abide by the [Code of Conduct](https://laravel.com/docs/contributions#code-of-conduct).
-
-## Security Vulnerabilities
-
-If you discover a security vulnerability within Laravel, please send an e-mail to Taylor Otwell via [taylor@laravel.com](mailto:taylor@laravel.com). All security vulnerabilities will be promptly addressed.
-
-## License
-
-The Laravel framework is open-sourced software licensed under the [MIT license](https://opensource.org/licenses/MIT).
+Diseñado con ❤️ para ofrecer una experiencia administrativa premium.
