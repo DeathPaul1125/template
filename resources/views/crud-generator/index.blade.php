@@ -70,7 +70,7 @@
                     $color = match($item['type']) {
                         'model'      => 'bg-blue-500',
                         'migration'  => 'bg-amber-500',
-                        'controller' => 'bg-purple-500',
+                        'controller' => 'bg-blue-500',
                         'view'       => 'bg-teal-600',
                         default      => 'bg-slate-500',
                     };

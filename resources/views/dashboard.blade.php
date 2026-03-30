@@ -7,7 +7,7 @@
             @php
                 $stats = [
                     ['label' => 'Usuarios Totales', 'value' => \App\Models\User::count(), 'icon' => 'users', 'color' => 'blue', 'change' => '+12%'],
-                    ['label' => 'Roles Activos',    'value' => \Spatie\Permission\Models\Role::count(), 'icon' => 'shield', 'color' => 'indigo', 'change' => 'Configurados'],
+                    ['label' => 'Roles Activos',    'value' => \Spatie\Permission\Models\Role::count(), 'icon' => 'shield', 'color' => 'blue', 'change' => 'Configurados'],
                     ['label' => 'Permisos',          'value' => \Spatie\Permission\Models\Permission::count(), 'icon' => 'key', 'color' => 'sky', 'change' => 'Activos'],
                     ['label' => 'Sesión',            'value' => 'Activa', 'icon' => 'check', 'color' => 'emerald', 'change' => 'En línea'],
                 ];
@@ -16,9 +16,8 @@
             @foreach($stats as $stat)
             <div class="bg-white dark:bg-slate-900 p-6 rounded-[2rem] border border-slate-100 dark:border-slate-800 shadow-sm hover:shadow-xl hover:-translate-y-1 transition-all duration-300 group">
                 <div class="flex items-center justify-between mb-4">
-                    <div class="p-3 rounded-2xl 
-                        @if($stat['color'] === 'blue') bg-blue-50 text-blue-600 dark:bg-blue-500/10 dark:text-blue-400 
-                        @elseif($stat['color'] === 'indigo') bg-indigo-50 text-indigo-600 dark:bg-indigo-500/10 dark:text-indigo-400
+                    <div class="p-3 rounded-2xl
+                        @if($stat['color'] === 'blue') bg-blue-50 text-blue-600 dark:bg-blue-500/10 dark:text-blue-400
                         @elseif($stat['color'] === 'sky') bg-sky-50 text-sky-600 dark:bg-sky-500/10 dark:text-sky-400
                         @else bg-emerald-50 text-emerald-600 dark:bg-emerald-500/10 dark:text-emerald-400 @endif
                         shadow-sm border border-white/20">
@@ -43,9 +42,8 @@
                 </div>
                 <div class="mt-4 pt-4 border-t border-slate-50 dark:border-slate-800 flex items-center justify-between">
                     <span class="text-[10px] font-black uppercase tracking-tighter text-slate-400">Desde último log</span>
-                    <span class="text-[10px] font-black px-2 py-1 rounded-lg 
-                        @if($stat['color'] === 'blue') bg-blue-100 text-blue-700 
-                        @elseif($stat['color'] === 'indigo') bg-indigo-100 text-indigo-700
+                    <span class="text-[10px] font-black px-2 py-1 rounded-lg
+                        @if($stat['color'] === 'blue') bg-blue-100 text-blue-700
                         @else bg-emerald-100 text-emerald-700 @endif">
                         {{ $stat['change'] }}
                     </span>
@@ -60,7 +58,7 @@
             <div class="lg:col-span-2 bg-white dark:bg-slate-900 rounded-[2.5rem] border border-slate-100 dark:border-slate-800 shadow-sm p-8 md:p-10 relative overflow-hidden group">
                 <!-- Decorative element -->
                 <div class="absolute -top-12 -right-12 w-48 h-48 bg-blue-600/5 rounded-full blur-3xl group-hover:bg-blue-600/10 transition-all duration-700"></div>
-                
+
                 <div class="relative z-10">
                     <div class="flex items-center gap-x-4 mb-10">
                         <div class="w-16 h-16 bg-blue-600 rounded-[1.25rem] flex items-center justify-center text-white text-2xl font-black shadow-xl shadow-blue-500/20">

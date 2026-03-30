@@ -24,12 +24,12 @@
                     <div class="flex items-center gap-x-3">
                         <div class="p-2.5 rounded-xl
                             @if($role->name === 'super-admin') bg-brand-50 dark:bg-brand-900/30
-                            @elseif($role->name === 'admin') bg-violet-50 dark:bg-violet-900/30
+                            @elseif($role->name === 'admin') bg-blue-50 dark:bg-blue-900/30
                             @elseif($role->name === 'editor') bg-amber-50 dark:bg-amber-900/30
                             @else bg-slate-100 dark:bg-slate-700 @endif">
                             <svg class="w-5 h-5
                                 @if($role->name === 'super-admin') text-brand-600 dark:text-brand-400
-                                @elseif($role->name === 'admin') text-violet-600 dark:text-violet-400
+                                @elseif($role->name === 'admin') text-blue-600 dark:text-blue-400
                                 @elseif($role->name === 'editor') text-amber-600 dark:text-amber-400
                                 @else text-slate-500 dark:text-slate-400 @endif"
                                 fill="none" stroke="currentColor" viewBox="0 0 24 24">

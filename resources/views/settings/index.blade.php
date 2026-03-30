@@ -2,19 +2,19 @@
     <x-slot name="header">Configuración del Sistema</x-slot>
 
     <div class="max-w-4xl mx-auto py-10 sm:px-6 lg:px-8">
-        
+
         <form action="{{ route('settings.update') }}" method="POST" enctype="multipart/form-data" class="space-y-6">
             @csrf
 
             <!-- Card: Identidad -->
             <div class="flex flex-col bg-white border shadow-sm rounded-xl p-4 md:p-5 dark:bg-slate-900 dark:border-gray-700 dark:text-gray-400">
                 <h3 class="text-lg font-bold text-gray-800 dark:text-white mb-4">Identidad Visual</h3>
-                
+
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <!-- Nombre del Sitio -->
                     <div>
                         <label for="site_name" class="block text-sm font-medium mb-2 dark:text-white">Nombre del Sistema</label>
-                        <input type="text" id="site_name" name="site_name" 
+                        <input type="text" id="site_name" name="site_name"
                                value="{{ \App\Models\Setting::get('site_name', config('app.name')) }}"
                                class="py-3 px-4 block w-full border-gray-200 rounded-lg text-sm focus:border-brand-500 focus:ring-brand-500 disabled:opacity-50 disabled:pointer-events-none dark:bg-slate-900 dark:border-gray-700 dark:text-gray-400 dark:focus:ring-gray-600">
                     </div>
@@ -23,10 +23,10 @@
                     <div>
                         <label for="brand_color" class="block text-sm font-medium mb-2 dark:text-white">Color de Marca (Principal)</label>
                         <div class="flex items-center gap-3">
-                            <input type="color" id="brand_color" name="brand_color" 
-                                   value="{{ \App\Models\Setting::get('brand_color', '#4f46e5') }}"
+                            <input type="color" id="brand_color" name="brand_color"
+                                   value="{{ \App\Models\Setting::get('brand_color', '#0e8ceb') }}"
                                    class="p-1 h-10 w-20 block bg-white border border-gray-200 cursor-pointer rounded-lg disabled:opacity-50 disabled:pointer-events-none dark:bg-slate-900 dark:border-gray-700">
-                            <span class="text-xs text-gray-500 uppercase font-mono">{{ \App\Models\Setting::get('brand_color', '#4f46e5') }}</span>
+                            <span class="text-xs text-gray-500 uppercase font-mono">{{ \App\Models\Setting::get('brand_color', '#0e8ceb') }}</span>
                         </div>
                     </div>
                 </div>
@@ -35,7 +35,7 @@
             <!-- Card: Imágenes -->
             <div class="flex flex-col bg-white border shadow-sm rounded-xl p-4 md:p-5 dark:bg-slate-900 dark:border-gray-700 dark:text-gray-400">
                 <h3 class="text-lg font-bold text-gray-800 dark:text-white mb-4">Imágenes y Favicon</h3>
-                
+
                 <div class="space-y-6">
                     <!-- Logo -->
                     <div class="grid grid-cols-1 md:grid-cols-3 items-center gap-4">

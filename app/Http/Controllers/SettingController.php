@@ -26,14 +26,15 @@ class SettingController extends Controller
             'site_logo'    => 'nullable|image|mimes:png,jpg,jpeg,svg|max:2048',
             'login_bg'     => 'nullable|image|mimes:png,jpg,jpeg|max:5120',
             'site_favicon' => 'nullable|image|mimes:png,ico,svg|max:512',
-            'brand_color'  => 'nullable|string|regex:/^#([A-Fa-f0-9]{6}|[A-Fa-f0-9]{3})$/',
+            'brand_color'  => ['nullable', 'string', 'regex:/^#([A-Fa-f0-9]{6}|[A-Fa-f0-9]{3})$/'],
+            // Nota: se usa array para evitar que el | del regex se interprete como separador de reglas
         ]);
 
         // Guardar valores de texto
         if ($request->has('site_name')) {
             Setting::set('site_name', $request->site_name);
         }
-        
+
         if ($request->has('brand_color')) {
             Setting::set('brand_color', $request->brand_color);
         }

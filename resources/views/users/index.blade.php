@@ -56,7 +56,7 @@
                                 @foreach($user->roles as $role)
                                 <span class="inline-flex items-center gap-x-1 py-1 px-2.5 rounded-full text-xs font-medium
                                     @if($role->name === 'super-admin') bg-brand-100 text-brand-700 dark:bg-brand-900/30 dark:text-brand-400
-                                    @elseif($role->name === 'admin') bg-violet-100 text-violet-700 dark:bg-violet-900/30 dark:text-violet-400
+                                    @elseif($role->name === 'admin') bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400
                                     @elseif($role->name === 'editor') bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400
                                     @else bg-slate-100 text-slate-600 dark:bg-slate-700 dark:text-slate-300 @endif">
                                     {{ $role->name }}
