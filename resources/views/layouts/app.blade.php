@@ -49,13 +49,91 @@
     <!-- DataTables CSS -->
     <link rel="stylesheet" href="https://cdn.datatables.net/2.1.8/css/dataTables.tailwindcss.min.css">
     <style>
-        /* DataTables Buttons custom styles */
-        .dt-buttons { display:inline-flex; gap:.375rem; }
-        .dt-buttons .dt-button { display:inline-flex; align-items:center; padding:.3rem .75rem; font-size:.75rem; font-weight:600; border-radius:.5rem; border:none; cursor:pointer; transition:opacity .15s; }
-        .dt-buttons .dt-button:hover { opacity:.85; }
-        .dt-btn-excel  { background:#16a34a; color:#fff; }
-        .dt-btn-pdf    { background:#dc2626; color:#fff; }
-        .dt-btn-print  { background:#475569; color:#fff; }
+        /* ===== DataTables: Botones de exportación ===== */
+        .dt-buttons { display:inline-flex; flex-wrap:wrap; gap:.375rem; }
+        .dt-buttons .dt-button {
+            display:inline-flex; align-items:center; gap:.3rem;
+            padding:.35rem .9rem; font-size:.72rem; font-weight:600;
+            border-radius:.5rem; border:none; cursor:pointer;
+            transition:all .15s ease; letter-spacing:.02em;
+            box-shadow:0 1px 4px rgba(0,0,0,.18);
+        }
+        .dt-buttons .dt-button:hover { transform:translateY(-1px); box-shadow:0 4px 14px rgba(0,0,0,.22); }
+        .dt-buttons .dt-button:active { transform:translateY(0); }
+        .dt-btn-excel  { background:linear-gradient(135deg,#16a34a,#15803d); color:#fff; }
+        .dt-btn-pdf    { background:linear-gradient(135deg,#dc2626,#b91c1c); color:#fff; }
+        .dt-btn-print  { background:linear-gradient(135deg,#475569,#334155); color:#fff; }
+
+        /* ===== DataTables: Cabecera ===== */
+        table.dataTable thead tr th {
+            background:linear-gradient(180deg,#1e293b 0%,#0f172a 100%) !important;
+            color:#94a3b8 !important;
+            font-size:10px !important; font-weight:700 !important;
+            text-transform:uppercase !important; letter-spacing:.08em !important;
+            padding:12px 16px !important; border:none !important; white-space:nowrap;
+        }
+        table.dataTable thead tr th:hover {
+            background:linear-gradient(180deg,#334155 0%,#1e293b 100%) !important;
+            color:#e2e8f0 !important;
+        }
+        table.dataTable thead tr th.sorting_asc,
+        table.dataTable thead tr th.sorting_desc { color:#818cf8 !important; }
+
+        /* ===== DataTables: Filas ===== */
+        table.dataTable tbody tr { transition:background-color .12s; border-bottom:1px solid #f1f5f9; }
+        .dark table.dataTable tbody tr { border-bottom-color:#1e293b; }
+        table.dataTable tbody tr:nth-child(even) td { background-color:#f8fafc !important; }
+        .dark table.dataTable tbody tr:nth-child(even) td { background-color:rgba(15,23,42,.35) !important; }
+        table.dataTable tbody tr:hover td { background-color:#eef2ff !important; }
+        .dark table.dataTable tbody tr:hover td { background-color:rgba(99,102,241,.08) !important; }
+        table.dataTable tbody td {
+            padding:11px 16px !important;
+            font-size:13px !important; color:#334155;
+            vertical-align:middle !important;
+        }
+        .dark table.dataTable tbody td { color:#cbd5e1; }
+
+        /* ===== DataTables: Búsqueda y longitud ===== */
+        div.dt-search input[type="search"],
+        div.dt-length select {
+            border:1px solid #e2e8f0 !important; border-radius:.5rem !important;
+            padding:.4rem .75rem !important; font-size:.8125rem !important;
+            background:#fff !important; color:#334155 !important;
+            outline:none; transition:border-color .15s, box-shadow .15s;
+        }
+        div.dt-search input[type="search"]:focus,
+        div.dt-length select:focus {
+            border-color:#6366f1 !important;
+            box-shadow:0 0 0 3px rgba(99,102,241,.15) !important;
+        }
+        .dark div.dt-search input[type="search"],
+        .dark div.dt-length select {
+            background:#1e293b !important; border-color:#334155 !important; color:#e2e8f0 !important;
+        }
+
+        /* ===== DataTables: Paginación ===== */
+        .dt-paging .dt-paging-button {
+            border-radius:.375rem !important; min-width:32px; height:32px;
+            display:inline-flex !important; align-items:center; justify-content:center;
+            font-size:.8rem !important; font-weight:500 !important;
+            border:none !important; background:transparent !important;
+            color:#475569 !important; transition:all .12s; cursor:pointer; margin:0 1px !important;
+        }
+        .dt-paging .dt-paging-button:hover:not(.disabled):not(.current) { background:#f1f5f9 !important; color:#1e293b !important; }
+        .dt-paging .dt-paging-button.current {
+            background:linear-gradient(135deg,#6366f1,#4f46e5) !important;
+            color:#fff !important; box-shadow:0 2px 8px rgba(99,102,241,.4) !important;
+        }
+        .dt-paging .dt-paging-button.disabled { opacity:.35 !important; }
+
+        /* ===== DataTables: Overlay de procesamiento ===== */
+        .dt-processing {
+            background:rgba(255,255,255,.94) !important; border-radius:.75rem !important;
+            border:1px solid #e0e7ff !important; box-shadow:0 8px 32px rgba(99,102,241,.15) !important;
+            color:#6366f1 !important; font-size:.8rem !important; font-weight:600 !important;
+            padding:1rem 1.75rem !important;
+        }
+        .dark .dt-processing { background:rgba(15,23,42,.94) !important; border-color:#312e81 !important; }
     </style>
 </head>
 <body class="bg-gray-50 dark:bg-slate-900 h-full font-sans antialiased">

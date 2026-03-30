@@ -14,18 +14,21 @@
             </a>
         </div>
 
-        <div class="bg-white dark:bg-slate-800 border border-gray-200 dark:border-slate-700 rounded-2xl shadow-sm overflow-hidden p-4">
-            <table id="dt-product" class="min-w-full" style="width:100%">
-                <thead>
-                    <tr>
-                        <th>Name</th>
-                        <th>Description</th>
-                        <th>Price</th>
-                        <th>Sale Price</th>
-                        <th>Acciones</th>
-                    </tr>
-                </thead>
-            </table>
+        <div class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl shadow-sm overflow-hidden">
+            <div class="h-1 bg-gradient-to-r from-indigo-500 via-purple-500 to-pink-500"></div>
+            <div class="p-5">
+                <table id="dt-product" class="w-full" style="width:100%">
+                    <thead>
+                        <tr>
+                            <th>Name</th>
+                            <th>Description</th>
+                            <th>Price</th>
+                            <th>Sale Price</th>
+                            <th>Acciones</th>
+                        </tr>
+                    </thead>
+                </table>
+            </div>
         </div>
     </div>
 
@@ -37,17 +40,79 @@ $(function () {
         serverSide: true,
         ajax: '{{ route('products.data') }}',
         language: { url: 'https://cdn.datatables.net/plug-ins/2.1.8/i18n/es-ES.json' },
-        dom: '<"flex flex-wrap items-center justify-between gap-2 mb-3"lB>frtip',
+        dom: '<"flex flex-wrap items-center justify-between gap-3 mb-4"lB><"mb-3"f>rt<"flex flex-wrap items-center justify-between gap-3 mt-4"ip>',
         buttons: [
-            { extend: 'excelHtml5', text: '<svg class="inline w-3.5 h-3.5 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg>Excel', className: 'dt-btn-excel' },
-            { extend: 'pdfHtml5',   text: '<svg class="inline w-3.5 h-3.5 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z"/></svg>PDF',   className: 'dt-btn-pdf',   orientation: 'landscape', pageSize: 'A4' },
-            { extend: 'print',      text: '<svg class="inline w-3.5 h-3.5 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"/></svg>Imprimir', className: 'dt-btn-print' },
+            {
+                extend: 'excelHtml5',
+                text: '<svg class="inline w-3.5 h-3.5 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg>Excel',
+                className: 'dt-btn-excel',
+                exportOptions: { columns: ':not(:last-child)' }
+            },
+            {
+                extend: 'pdfHtml5',
+                text: '<svg class="inline w-3.5 h-3.5 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z"/></svg>PDF',
+                className: 'dt-btn-pdf',
+                orientation: 'landscape',
+                pageSize: 'A4',
+                exportOptions: { columns: ':not(:last-child)' },
+                customize: function(doc) {
+                    doc.pageMargins = [30, 45, 30, 50];
+                    if (doc.content[0]) {
+                        doc.content[0].fontSize = 16;
+                        doc.content[0].bold = true;
+                        doc.content[0].color = '#1e293b';
+                        doc.content[0].margin = [0, 0, 0, 14];
+                    }
+                    var tbl  = doc.content[doc.content.length - 1];
+                    var body = tbl.table.body;
+                    // Encabezado con fondo degradado indigo
+                    body[0].forEach(function(c) {
+                        c.fillColor = '#4f46e5';
+                        c.color     = '#ffffff';
+                        c.bold      = true;
+                        c.fontSize  = 8;
+                        c.margin    = [5, 7, 5, 7];
+                    });
+                    // Filas alternadas
+                    for (var i = 1; i < body.length; i++) {
+                        body[i].forEach(function(c) {
+                            c.fontSize  = 8;
+                            c.color     = '#334155';
+                            c.fillColor = i % 2 === 0 ? '#f1f5f9' : '#ffffff';
+                            c.margin    = [5, 5, 5, 5];
+                        });
+                    }
+                    // Bordes minimalistas
+                    tbl.layout = {
+                        hLineWidth: function(i, n) { return (i === 0 || i === 1 || i === n.table.body.length) ? 0 : 0.5; },
+                        vLineWidth: function()       { return 0; },
+                        hLineColor: function()       { return '#e2e8f0'; }
+                    };
+                    tbl.table.widths = Array(body[0].length).fill('*');
+                    // Pie de página
+                    doc.footer = function(p, n) {
+                        return {
+                            columns: [
+                                { text: new Date().toLocaleDateString('es-ES', {day:'2-digit',month:'long',year:'numeric'}), fontSize: 7, color: '#94a3b8', margin: [30, 0, 0, 0] },
+                                { text: 'Página ' + p + ' de ' + n, fontSize: 7, color: '#94a3b8', alignment: 'right', margin: [0, 0, 30, 0] }
+                            ],
+                            margin: [0, 10, 0, 0]
+                        };
+                    };
+                }
+            },
+            {
+                extend: 'print',
+                text: '<svg class="inline w-3.5 h-3.5 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"/></svg>Imprimir',
+                className: 'dt-btn-print',
+                exportOptions: { columns: ':not(:last-child)' }
+            },
         ],
         columns: [
-                    { data: 'name' },
-                    { data: 'description' },
-                    { data: 'price' },
-                    { data: 'sale_price' },
+            { data: 'name' },
+            { data: 'description' },
+            { data: 'price' },
+            { data: 'sale_price' },
             { data: 'actions', orderable: false, searchable: false }
         ]
     });
