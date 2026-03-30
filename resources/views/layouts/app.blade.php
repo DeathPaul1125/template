@@ -132,6 +132,23 @@
             </a>
             @endcan
 
+            @role('super-admin')
+            <!-- Herramientas -->
+            <div class="pt-5 pb-2">
+                <span class="px-3 text-[10px] font-bold uppercase tracking-[0.15em] text-white/50">
+                    Herramientas
+                </span>
+            </div>
+            <!-- Generador de CRUD -->
+            <a href="{{ route('crud-generator.index') }}"
+               class="sidebar-link {{ request()->routeIs('crud-generator.*') ? 'active' : '' }}">
+                <svg class="w-4 h-4 flex-shrink-0" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4" />
+                </svg>
+                Generador CRUD
+            </a>
+            @endrole
+
             <!-- Config -->
             <div class="pt-5 pb-2">
                 <span class="px-3 text-[10px] font-bold uppercase tracking-[0.15em] text-white/50">

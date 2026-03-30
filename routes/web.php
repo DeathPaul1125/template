@@ -50,4 +50,12 @@ Route::middleware([
 
     // Imprimir PDF
     Route::get('/users/print', [\App\Http\Controllers\UserController::class, 'downloadPdf'])->name('users.print');
+
+    // Generador de CRUD
+    Route::get('/crud-generator', [\App\Http\Controllers\CrudGeneratorController::class, 'index'])
+        ->name('crud-generator.index')
+        ->middleware('role:super-admin');
+    Route::post('/crud-generator/generate', [\App\Http\Controllers\CrudGeneratorController::class, 'generate'])
+        ->name('crud-generator.generate')
+        ->middleware('role:super-admin');
 });
