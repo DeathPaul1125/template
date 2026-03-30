@@ -45,10 +45,11 @@
 
 {{-- ===== SIDEBAR ===== --}}
 <div id="hs-application-sidebar"
-     class="hs-overlay [--auto-close:lg] hs-overlay-open:translate-x-0 -translate-x-full transition-all duration-500 transform hidden fixed top-0 start-0 bottom-0 z-[60] w-64 glass dark:glass-dark overflow-y-auto lg:block lg:translate-x-0 lg:end-auto lg:bottom-0 [&::-webkit-scrollbar]:w-2 [&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-track]:bg-gray-100 [&::-webkit-scrollbar-thumb]:bg-gray-300 dark:[&::-webkit-scrollbar-track]:bg-slate-700 dark:[&::-webkit-scrollbar-thumb]:bg-slate-500"
+     class="hs-overlay [--auto-close:lg] hs-overlay-open:translate-x-0 -translate-x-full transition-all duration-500 transform hidden fixed top-0 start-0 bottom-0 z-[60] w-64 bg-slate-900 overflow-y-auto lg:block lg:translate-x-0 lg:end-auto lg:bottom-0 [&::-webkit-scrollbar]:w-2 [&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-track]:bg-slate-800 [&::-webkit-scrollbar-thumb]:bg-slate-700"
+     style="background-color: #0f172a !important;"
      aria-label="Sidebar">
 
-    <nav class="w-64 flex flex-col h-full">
+    <nav class="w-64 flex flex-col h-full bg-transparent">
         <!-- Logo / Brand -->
         <div class="px-6 pt-6 pb-4">
             <a href="{{ route('dashboard') }}" class="flex items-center gap-x-2">
@@ -61,16 +62,15 @@
                         </svg>
                     </div>
                 @endif
-                <span class="text-lg font-bold text-slate-800 dark:text-white">{{ \App\Models\Setting::get('site_name', config('app.name')) }}</span>
-            </a>
+                <span class="text-xl font-bold text-white tracking-tight">
+                {{ \App\Models\Setting::get('site_name', config('app.name', 'Laravel')) }}
+            </span>
         </div>
 
-        <div class="px-3 pb-3">
-            <div class="h-px bg-gray-200 dark:bg-slate-700"></div>
-        </div>
-
-        <!-- Navigation Links -->
-        <div class="flex-1 px-3 space-y-1 overflow-y-auto">
+        <div class="h-full px-4 pb-4 space-y-1.5 [&::-webkit-scrollbar]:w-2 [&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-track]:bg-slate-800 [&::-webkit-scrollbar-thumb]:bg-slate-600 overflow-y-auto">
+            <div class="py-2 mb-2 border-b border-white/10">
+                <p class="px-3 text-[11px] font-bold uppercase tracking-widest text-slate-400">Menú Principal</p>
+            </div>
 
             <!-- Dashboard -->
             <a href="{{ route('dashboard') }}"
@@ -83,8 +83,8 @@
 
             <!-- Administración -->
             @canany(['manage-users', 'manage-roles'])
-            <div class="pt-4 pb-1">
-                <span class="px-2.5 text-xs font-semibold uppercase tracking-widest text-slate-400 dark:text-slate-500">
+            <div class="pt-5 pb-2">
+                <span class="px-3 text-[10px] font-bold uppercase tracking-[0.15em] text-white/50">
                     Administración
                 </span>
             </div>
@@ -125,8 +125,8 @@
             @endcan
 
             <!-- Config -->
-            <div class="pt-4 pb-1">
-                <span class="px-2.5 text-xs font-semibold uppercase tracking-widest text-slate-400 dark:text-slate-500">
+            <div class="pt-5 pb-2">
+                <span class="px-3 text-[10px] font-bold uppercase tracking-[0.15em] text-white/50">
                     Cuenta
                 </span>
             </div>
@@ -142,19 +142,17 @@
         </div>
 
         <!-- User card bottom -->
-        <div class="px-3 py-4 border-t border-gray-200 dark:border-slate-700 mt-auto">
+        <div class="px-4 py-4 border-t border-white/10 mt-auto">
             <div class="hs-dropdown [--placement:top-left] relative w-full inline-flex">
-                <button type="button" class="hs-dropdown-toggle w-full flex items-center gap-x-3 py-2 px-2.5 text-sm text-slate-800 rounded-lg hover:bg-gray-100 dark:hover:bg-slate-800 dark:text-slate-200 transition-all">
+                <button type="button" class="hs-dropdown-toggle w-full flex items-center gap-x-3 py-2 px-2.5 text-sm text-white rounded-xl hover:bg-white/10 transition-all">
                     <span class="flex-shrink-0 w-8 h-8 rounded-full bg-gradient-to-br from-brand-400 to-brand-600 flex items-center justify-center text-white text-xs font-bold">
                         {{ strtoupper(substr(Auth::user()->name, 0, 2)) }}
                     </span>
-                    <div class="grow text-start min-w-0">
-                        <span class="block text-sm font-semibold truncate">{{ Auth::user()->name }}</span>
-                        <span class="block text-xs text-slate-500 truncate">{{ Auth::user()->getRoleNames()->first() ?? 'Sin rol' }}</span>
+                    <div class="ms-3 text-start">
+                        <span class="block text-sm font-semibold text-white">{{ Auth::user()->name }}</span>
+                        <span class="block text-[11px] text-slate-300 font-medium">{{ Auth::user()->getRoleNames()->first() ?? 'Sin rol' }}</span>
                     </div>
-                    <svg class="w-4 h-4 text-slate-400" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
-                        <path stroke-linecap="round" stroke-linejoin="round" d="M8 9l4-4 4 4m0 6l-4 4-4-4" />
-                    </svg>
+                    <svg class="ms-2 w-4 h-4 text-slate-300" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg>
                 </button>
 
                 <div class="hs-dropdown-menu hs-dropdown-open:opacity-100 w-60 transition-[opacity,margin] duration opacity-0 hidden z-10 bg-white shadow-md rounded-xl p-2 dark:bg-slate-800 border border-gray-200 dark:border-slate-700 mb-2" role="menu">
@@ -183,27 +181,22 @@
 {{-- ===== FIN SIDEBAR ===== --}}
 
 {{-- ===== WRAPPER PRINCIPAL ===== --}}
-<div class="w-full lg:ps-64">
+<div class="w-full lg:ps-64 bg-gray-50 dark:bg-slate-950 min-h-screen transition-colors duration-500">
 
     {{-- ===== TOPBAR ===== --}}
-    <div class="sticky top-0 inset-x-0 z-20 glass dark:glass-dark border-b-0">
+    <div class="sticky top-0 inset-x-0 z-20 bg-slate-900 border-b border-white/10" style="background-color: #0f172a !important;">
         <div class="flex items-center justify-between px-4 sm:px-6 py-3">
             <!-- Mobile: Toggle Sidebar -->
             <div class="flex items-center gap-x-3">
-                <button type="button"
-                        class="lg:hidden p-2 rounded-lg text-slate-500 hover:bg-gray-100 dark:hover:bg-slate-800 transition-colors"
-                        data-hs-overlay="#hs-application-sidebar"
-                        aria-controls="hs-application-sidebar"
-                        aria-label="Abrir menú">
-                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"/>
-                    </svg>
+                <button type="button" class="lg:hidden p-2 inline-flex justify-center items-center gap-x-2 rounded-xl border border-white/20 text-white hover:bg-white/10 focus:outline-none focus:ring-2 focus:ring-white/20 transition-all"
+                        data-hs-overlay="#hs-application-sidebar" aria-controls="hs-application-sidebar" aria-label="Toggle navigation">
+                    <svg class="flex-shrink-0 w-4 h-4" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="3" x2="21" y1="6" y2="6"/><line x1="3" x2="21" y1="12" y2="12"/><line x1="3" x2="21" y1="18" y2="18"/></svg>
                 </button>
 
                 <!-- Breadcrumb -->
                 @if(isset($header))
-                <div class="hidden sm:flex items-center gap-x-1 text-sm text-slate-500">
-                    <span class="text-slate-800 dark:text-white font-semibold">{{ $header }}</span>
+                <div class="hidden sm:flex items-center gap-x-1 text-sm text-slate-300">
+                    <span class="text-white font-semibold">{{ $header }}</span>
                 </div>
                 @endif
             </div>
@@ -212,7 +205,7 @@
             <div class="flex items-center gap-x-2">
 
                 <!-- Notificaciones -->
-                <button type="button" class="relative p-2 rounded-lg text-slate-500 hover:bg-gray-100 dark:hover:bg-slate-800 transition-colors">
+                <button type="button" class="relative p-2 rounded-lg text-slate-300 hover:bg-white/10 transition-colors">
                     <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"/>
                     </svg>
