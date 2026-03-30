@@ -23,7 +23,7 @@ class CrudGeneratorController extends Controller
             'model_name'      => ['required', 'regex:/^[A-Z][a-zA-Z0-9]+$/'],
             'fields'          => ['required', 'array', 'min:1'],
             'fields.*.name'   => ['required', 'regex:/^[a-z][a-z0-9_]*$/'],
-            'fields.*.type'   => ['required', 'in:string,text,integer,bigInteger,boolean,date,datetime,decimal,float,enum'],
+            'fields.*.type'   => ['required', 'in:string,text,integer,bigInteger,boolean,date,datetime,decimal,float,enum,image,file'],
             'menu_label'      => ['nullable', 'string', 'max:40'],
             'menu_icon'       => ['nullable', 'string', 'max:600'],
         ]);
@@ -328,6 +328,13 @@ class CrudGeneratorController extends Controller
             $length   = trim($field['length'] ?? '');
             $enumVals = trim($field['enum_values'] ?? '');
 
+            // image/file → stored as string (path)
+            if (in_array($type, ['image', 'file'])) {
+                $col = "\$table->string('{$name}')->nullable()";
+                $col .= ';';
+                return "            {$col}";
+            }
+
             // Normalize datetime → dateTime (Blueprint method name)
             $method = $type === 'datetime' ? 'dateTime' : $type;
 
@@ -379,12 +386,25 @@ class CrudGeneratorController extends Controller
         $viewPrefix     = $routePrefix;
         $titleSingular  = Str::headline($model);
 
+        $fileFields = collect($fields)->filter(fn($f) => in_array($f['type'], ['image', 'file']))->values();
+        $hasFileFields = $fileFields->isNotEmpty();
+
         // Validation rules
         $rules = collect($fields)->map(function ($f) {
             $nullable = !empty($f['nullable']);
-            $req  = $nullable ? "'nullable'" : "'required'";
-            $type = $f['type'];
+            $type     = $f['type'];
             $enumVals = trim($f['enum_values'] ?? '');
+            $accept   = trim($f['accept'] ?? '');
+
+            // File/image fields are always nullable on update (re-upload is optional)
+            if (in_array($type, ['image', 'file'])) {
+                $mimes = $accept ?: ($type === 'image' ? 'jpg,jpeg,png,gif,webp' : 'pdf,xlsx,xls,docx,doc,zip');
+                $maxKb = $type === 'image' ? '2048' : '10240';
+                $n = $f['name'];
+                return "            '{$n}' => ['nullable', 'file', 'mimes:{$mimes}', 'max:{$maxKb}'],";
+            }
+
+            $req  = $nullable ? "'nullable'" : "'required'";
             $extra = match ($type) {
                 'string'                 => ", 'string', 'max:255'",
                 'text'                   => ", 'string'",
@@ -399,13 +419,16 @@ class CrudGeneratorController extends Controller
             return "            '{$n}' => [{$req}{$extra}],";
         })->implode("\n");
 
-        $onlyFields = collect($fields)->pluck('name')->map(fn($n) => "'{$n}'")->implode(', ');
+        // Non-file fields for $request->only()
+        $plainFields   = collect($fields)->filter(fn($f) => !in_array($f['type'], ['image', 'file']));
+        $onlyFields    = $plainFields->pluck('name')->map(fn($n) => "'{$n}'")->implode(', ');
 
-        $dtImport = $dt ? "\nuse Yajra\\DataTables\\Facades\\DataTables;" : '';
+        $dtImport      = $dt ? "\nuse Yajra\\DataTables\\Facades\\DataTables;" : '';
+        $storageImport = $hasFileFields ? "\nuse Illuminate\\Support\\Facades\\Storage;" : '';
 
         $out  = "<?php\n\nnamespace App\\Http\\Controllers;\n\n";
         $out .= "use App\\Models\\{$model};\n";
-        $out .= "use Illuminate\\Http\\Request;{$dtImport}\n\n";
+        $out .= "use Illuminate\\Http\\Request;{$dtImport}{$storageImport}\n\n";
         $out .= "class {$model}Controller extends Controller\n{\n";
 
         // index
@@ -430,7 +453,26 @@ class CrudGeneratorController extends Controller
             $out .= "                \$html .= '</div>';\n";
             $out .= "                return \$html;\n";
             $out .= "            })\n";
-            $out .= "            ->rawColumns(['actions'])\n";
+
+            // Add extra columns for image/file fields
+            $rawCols = ["'actions'"];
+            foreach ($fileFields as $ff) {
+                $fn = $ff['name'];
+                $rawCols[] = "'{$fn}'";
+                if ($ff['type'] === 'image') {
+                    $out .= "            ->addColumn('{$fn}', function (\${$modelVar}) {\n";
+                    $out .= "                if (!\${$modelVar}->{$fn}) return '<span class=\"text-xs text-slate-400\">—</span>';\n";
+                    $out .= "                return '<img src=\"' . asset('storage/' . \${$modelVar}->{$fn}) . '\" class=\"h-10 w-10 object-cover rounded-lg border border-slate-200\">';\n";
+                    $out .= "            })\n";
+                } else {
+                    $out .= "            ->addColumn('{$fn}', function (\${$modelVar}) {\n";
+                    $out .= "                if (!\${$modelVar}->{$fn}) return '<span class=\"text-xs text-slate-400\">—</span>';\n";
+                    $out .= "                return '<a href=\"' . asset('storage/' . \${$modelVar}->{$fn}) . '\" target=\"_blank\" class=\"text-xs text-brand-600 hover:underline\">Ver</a>';\n";
+                    $out .= "            })\n";
+                }
+            }
+            $rawColsStr = implode(', ', $rawCols);
+            $out .= "            ->rawColumns([{$rawColsStr}])\n";
             $out .= "            ->make(true);\n    }\n";
         } else {
             $out .= "    public function index()\n    {\n";
@@ -445,7 +487,28 @@ class CrudGeneratorController extends Controller
         // store
         $out .= "\n    public function store(Request \$request)\n    {\n";
         $out .= "        \$request->validate([\n{$rules}\n        ]);\n\n";
-        $out .= "        {$model}::create(\$request->only([{$onlyFields}]));\n\n";
+
+        if ($hasFileFields) {
+            // Build manual data array for store
+            $storeLines = '';
+            if ($onlyFields) {
+                $storeLines .= "        \$data = \$request->only([{$onlyFields}]);\n";
+            } else {
+                $storeLines .= "        \$data = [];\n";
+            }
+            foreach ($fileFields as $ff) {
+                $fn   = $ff['name'];
+                $fdir = "uploads/{$routePrefix}";
+                $storeLines .= "        if (\$request->hasFile('{$fn}')) {\n";
+                $storeLines .= "            \$data['{$fn}'] = \$request->file('{$fn}')->store('{$fdir}', 'public');\n";
+                $storeLines .= "        }\n";
+            }
+            $out .= $storeLines;
+            $out .= "        {$model}::create(\$data);\n\n";
+        } else {
+            $out .= "        {$model}::create(\$request->only([{$onlyFields}]));\n\n";
+        }
+
         $out .= "        return redirect()->route('{$routePrefix}.index')\n";
         $out .= "            ->with('success', '{$titleSingular} creado correctamente.');\n    }\n";
 
@@ -456,7 +519,28 @@ class CrudGeneratorController extends Controller
         // update
         $out .= "\n    public function update(Request \$request, {$model} \${$modelVar})\n    {\n";
         $out .= "        \$request->validate([\n{$rules}\n        ]);\n\n";
-        $out .= "        \${$modelVar}->update(\$request->only([{$onlyFields}]));\n\n";
+
+        if ($hasFileFields) {
+            $updateLines = '';
+            if ($onlyFields) {
+                $updateLines .= "        \$data = \$request->only([{$onlyFields}]);\n";
+            } else {
+                $updateLines .= "        \$data = [];\n";
+            }
+            foreach ($fileFields as $ff) {
+                $fn   = $ff['name'];
+                $fdir = "uploads/{$routePrefix}";
+                $updateLines .= "        if (\$request->hasFile('{$fn}')) {\n";
+                $updateLines .= "            if (\${$modelVar}->{$fn}) Storage::disk('public')->delete(\${$modelVar}->{$fn});\n";
+                $updateLines .= "            \$data['{$fn}'] = \$request->file('{$fn}')->store('{$fdir}', 'public');\n";
+                $updateLines .= "        }\n";
+            }
+            $out .= $updateLines;
+            $out .= "        \${$modelVar}->update(\$data);\n\n";
+        } else {
+            $out .= "        \${$modelVar}->update(\$request->only([{$onlyFields}]));\n\n";
+        }
+
         $out .= "        return redirect()->route('{$routePrefix}.index')\n";
         $out .= "            ->with('success', '{$titleSingular} actualizado correctamente.');\n    }\n";
 
@@ -488,14 +572,36 @@ class CrudGeneratorController extends Controller
         )->implode("\n");
 
         $tds = collect($fields)->map(function ($f) use ($modelVar) {
-            $val = "{{ ${$modelVar}->{$f['name']} }}";
+            $n = $f['name'];
             if ($f['type'] === 'boolean') {
                 return "                            <td class=\"px-5 py-3.5\">\n"
-                    . "                                <span class=\"inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold {{ ${$modelVar}->{$f['name']} ? 'bg-emerald-100 text-emerald-700' : 'bg-slate-100 text-slate-500' }}\">\n"
-                    . "                                    {{ ${$modelVar}->{$f['name']} ? 'S\u00ed' : 'No' }}\n"
+                    . "                                <span class=\"inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold {{ \${$modelVar}->{$n} ? 'bg-emerald-100 text-emerald-700' : 'bg-slate-100 text-slate-500' }}\">\n"
+                    . "                                    {{ \${$modelVar}->{$n} ? 'Sí' : 'No' }}\n"
                     . "                                </span>\n"
                     . "                            </td>";
             }
+            if ($f['type'] === 'image') {
+                return "                            <td class=\"px-5 py-3.5\">\n"
+                    . "                                @if(\${$modelVar}->{$n})\n"
+                    . "                                <img src=\"{{ asset('storage/' . \${$modelVar}->{$n}) }}\" alt=\"{$n}\" class=\"h-10 w-10 object-cover rounded-lg border border-slate-200 dark:border-slate-700\">\n"
+                    . "                                @else\n"
+                    . "                                <span class=\"text-xs text-slate-400\">—</span>\n"
+                    . "                                @endif\n"
+                    . "                            </td>";
+            }
+            if ($f['type'] === 'file') {
+                return "                            <td class=\"px-5 py-3.5\">\n"
+                    . "                                @if(\${$modelVar}->{$n})\n"
+                    . "                                <a href=\"{{ asset('storage/' . \${$modelVar}->{$n}) }}\" target=\"_blank\" class=\"inline-flex items-center gap-x-1 text-xs text-brand-600 hover:underline\">\n"
+                    . "                                    <svg class=\"w-3.5 h-3.5\" fill=\"none\" stroke=\"currentColor\" viewBox=\"0 0 24 24\"><path stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-width=\"2\" d=\"M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13\"/></svg>\n"
+                    . "                                    Ver\n"
+                    . "                                </a>\n"
+                    . "                                @else\n"
+                    . "                                <span class=\"text-xs text-slate-400\">—</span>\n"
+                    . "                                @endif\n"
+                    . "                            </td>";
+            }
+            $val = "{{ \${$modelVar}->{$n} }}";
             return "                            <td class=\"px-5 py-3.5 text-sm text-slate-700 dark:text-slate-300 max-w-[200px] truncate\">{$val}</td>";
         })->implode("\n");
 
@@ -569,9 +675,13 @@ class CrudGeneratorController extends Controller
                     . Str::headline($f['name']) . "</th>"
         )->implode("\n");
 
-        $dtCols = collect($fields)->map(
-            fn($f) => "                    { data: '{$f['name']}', className: 'px-4 py-3 text-sm text-slate-700' }"
-        )->implode(",\n");
+        $dtCols = collect($fields)->map(function ($f) {
+            $base = "{ data: '{$f['name']}', className: 'px-4 py-3 text-sm text-slate-700'";
+            if (in_array($f['type'], ['image', 'file'])) {
+                return "                    " . $base . ", orderable: false, searchable: false }";
+            }
+            return "                    " . $base . " }";
+        })->implode(",\n");
 
         $dataRoute   = "{{ route('{$routePrefix}.data') }}";
         $createRoute = "{{ route('{$routePrefix}.create') }}";
@@ -620,6 +730,9 @@ class CrudGeneratorController extends Controller
         $routePrefix   = Str::kebab(Str::plural($model));
         $titleSingular = Str::headline($model);
 
+        $hasFileFields = collect($fields)->contains(fn($f) => in_array($f['type'], ['image', 'file']));
+        $enctype       = $hasFileFields ? ' enctype="multipart/form-data"' : '';
+
         $formFields = collect($fields)->map(fn($f) => $this->makeFormField($f, null))->implode("\n\n");
 
         $out  = "<x-app-layout>\n";
@@ -636,7 +749,7 @@ class CrudGeneratorController extends Controller
         $out .= "                <h1 class=\"text-base font-semibold text-slate-800 dark:text-white\">Crear {$titleSingular}</h1>\n";
         $out .= "                <p class=\"text-xs text-slate-400 mt-0.5\">Completa el formulario para agregar un nuevo registro.</p>\n";
         $out .= "            </div>\n";
-        $out .= "            <form action=\"{{ route('{$routePrefix}.store') }}\" method=\"POST\" class=\"p-6 space-y-5\">\n";
+        $out .= "            <form action=\"{{ route('{$routePrefix}.store') }}\" method=\"POST\"{$enctype} class=\"p-6 space-y-5\">\n";
         $out .= "                @csrf\n\n";
         $out .= $formFields . "\n\n";
         $out .= "                <div class=\"flex items-center justify-end gap-x-3 pt-3 border-t border-slate-100 dark:border-slate-800\">\n";
@@ -657,6 +770,9 @@ class CrudGeneratorController extends Controller
         $modelVar      = Str::camel($model);
         $titleSingular = Str::headline($model);
 
+        $hasFileFields = collect($fields)->contains(fn($f) => in_array($f['type'], ['image', 'file']));
+        $enctype       = $hasFileFields ? ' enctype="multipart/form-data"' : '';
+
         $formFields = collect($fields)->map(fn($f) => $this->makeFormField($f, $modelVar))->implode("\n\n");
 
         $out  = "<x-app-layout>\n";
@@ -673,7 +789,7 @@ class CrudGeneratorController extends Controller
         $out .= "                <h1 class=\"text-base font-semibold text-slate-800 dark:text-white\">Editar {$titleSingular}</h1>\n";
         $out .= "                <p class=\"text-xs text-slate-400 mt-0.5\">Modifica los datos del registro.</p>\n";
         $out .= "            </div>\n";
-        $out .= "            <form action=\"{{ route('{$routePrefix}.update', \${$modelVar}) }}\" method=\"POST\" class=\"p-6 space-y-5\">\n";
+        $out .= "            <form action=\"{{ route('{$routePrefix}.update', \${$modelVar}) }}\" method=\"POST\"{$enctype} class=\"p-6 space-y-5\">\n";
         $out .= "                @csrf\n                @method('PUT')\n\n";
         $out .= $formFields . "\n\n";
         $out .= "                <div class=\"flex items-center justify-between pt-3 border-t border-slate-100 dark:border-slate-800\">\n";
@@ -738,6 +854,35 @@ class CrudGeneratorController extends Controller
             $out .= "                    <input id=\"{$name}\" type=\"number\" name=\"{$name}\" value=\"{$oldVal}\"{$required} class=\"{$inputClass}\">\n";
         } elseif (in_array($type, ['decimal', 'float'])) {
             $out .= "                    <input id=\"{$name}\" type=\"number\" step=\"0.01\" name=\"{$name}\" value=\"{$oldVal}\"{$required} class=\"{$inputClass}\">\n";
+        } elseif ($type === 'image') {
+            $accept    = trim($field['accept'] ?? '');
+            $mimes     = $accept ?: 'jpg,jpeg,png,gif,webp';
+            $acceptAttr = implode(',', array_map(fn($e) => '.' . trim($e), explode(',', $mimes)));
+            $out .= "                    <input id=\"{$name}\" type=\"file\" name=\"{$name}\" accept=\"{$acceptAttr}\"{$required} class=\"{$inputClass}\">\n";
+            if ($modelVar) {
+                $out .= "                    @if(\${$modelVar}->{$name})\n";
+                $out .= "                    <div class=\"mt-2 flex items-center gap-x-3\">\n";
+                $out .= "                    <img src=\"{{ asset('storage/' . \${$modelVar}->{$name}) }}\" alt=\"{$label}\" class=\"h-16 w-16 object-cover rounded-lg border border-slate-200 dark:border-slate-700\">\n";
+                $out .= "                        <span class=\"text-xs text-slate-400\">Imagen actual. Sube una nueva para reemplazarla.</span>\n";
+                $out .= "                    </div>\n";
+                $out .= "                    @endif\n";
+            }
+        } elseif ($type === 'file') {
+            $accept    = trim($field['accept'] ?? '');
+            $mimes     = $accept ?: 'pdf,xlsx,xls,docx,doc,zip';
+            $acceptAttr = implode(',', array_map(fn($e) => '.' . trim($e), explode(',', $mimes)));
+            $out .= "                    <input id=\"{$name}\" type=\"file\" name=\"{$name}\" accept=\"{$acceptAttr}\"{$required} class=\"{$inputClass}\">\n";
+            if ($modelVar) {
+                $out .= "                    @if(\${$modelVar}->{$name})\n";
+                $out .= "                    <div class=\"mt-2\">\n";
+                $out .= "                        <a href=\"{{ asset('storage/' . \${$modelVar}->{$name}) }}\" target=\"_blank\" class=\"inline-flex items-center gap-x-1.5 text-xs text-brand-600 hover:underline\">\n";
+                $out .= "                            <svg class=\"w-3.5 h-3.5\" fill=\"none\" stroke=\"currentColor\" viewBox=\"0 0 24 24\"><path stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-width=\"2\" d=\"M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13\"/></svg>\n";
+                $out .= "                            Ver archivo actual\n";
+                $out .= "                        </a>\n";
+                $out .= "                        <span class=\"ml-2 text-xs text-slate-400\">Sube uno nuevo para reemplazarlo.</span>\n";
+                $out .= "                    </div>\n";
+                $out .= "                    @endif\n";
+            }
         } else {
             $out .= "                    <input id=\"{$name}\" type=\"text\" name=\"{$name}\" value=\"{$oldVal}\"{$required} class=\"{$inputClass}\">\n";
         }
