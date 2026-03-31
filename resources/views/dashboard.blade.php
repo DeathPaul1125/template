@@ -93,8 +93,8 @@
             addWidget() {
                 if (!this.nw.title.trim()) {
                     const m = this.currentModel();
-                    const lbl = { stat: 'Tarjeta', 'growth-stat': 'Tendencia', 'recent-table': 'Tabla', 'line-chart': 'LÃ­nea', 'bar-chart': 'Barras', 'pie-chart': 'Dona', 'top-list': 'Top N' };
-                    this.nw.title = (m?.label || this.nw.model) + ' â€” ' + (lbl[this.nw.type] || this.nw.type);
+                    const lbl = { stat: 'Tarjeta', 'growth-stat': 'Tendencia', 'recent-table': 'Tabla', 'line-chart': 'Li­nea', 'bar-chart': 'Barras', 'pie-chart': 'Dona', 'top-list': 'Top N' };
+                    this.nw.title = (m?.label || this.nw.model) + ' ' + (lbl[this.nw.type] || this.nw.type);
                 }
                 if (this.editingId) {
                     const idx = this.widgets.findIndex(w => w.id === this.editingId);
